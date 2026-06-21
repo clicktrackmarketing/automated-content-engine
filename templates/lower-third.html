@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-bg: #12284D;
+      --brand-accent: #18C0E7;
+      --brand-cta: #FE6601;
+      --brand-positive: #61CE70;
+      --brand-text: #FFFFFF;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: 'Montserrat', 'Inter', 'Poppins', sans-serif;
+    }
+    .lower-third {
+      position: absolute;
+      bottom: 80px;
+      left: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lt-name-bar {
+      background: rgba(18, 40, 77, 0.92); /* --brand-bg with opacity */
+      padding: 12px 28px;
+      border-radius: 4px;
+      transform: translateX(-120%);
+    }
+    .lt-name {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--brand-text);
+      white-space: nowrap;
+    }
+    .lt-title-bar {
+      background: var(--brand-accent);
+      padding: 8px 24px;
+      border-radius: 4px;
+      transform: translateX(-120%);
+      align-self: flex-start;
+    }
+    .lt-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--brand-bg);
+      white-space: nowrap;
+    }
+    .lt-accent {
+      position: absolute;
+      left: -6px;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: var(--brand-cta);
+      border-radius: 3px;
+      transform: scaleY(0);
+      transform-origin: top;
+    }
+  </style>
+</head>
+<body>
+  <div
+    id="root"
+    data-composition-id="lower-third"
+    data-start="0"
+    data-duration="5"
+    data-width="1920"
+    data-height="1080"
+  >
+    <div class="lower-third">
+      <div class="lt-accent" id="lt-accent"></div>
+      <div class="lt-name-bar" id="lt-name-bar">
+        <span class="lt-name">Speaker Name</span>
+      </div>
+      <div class="lt-title-bar" id="lt-title-bar">
+        <span class="lt-title">Title or Role</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.to("#lt-accent", { scaleY: 1, duration: 0.3, ease: "power2.out" }, 0.2);
+    tl.to("#lt-name-bar", { x: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+    tl.to("#lt-title-bar", { x: 0, duration: 0.4, ease: "power3.out" }, 0.5);
+
+    tl.to("#lt-name-bar", { x: "-120%", duration: 0.4, ease: "power2.in" }, 4.0);
+    tl.to("#lt-title-bar", { x: "-120%", duration: 0.3, ease: "power2.in" }, 4.1);
+    tl.to("#lt-accent", { scaleY: 0, duration: 0.2, ease: "power2.in" }, 4.3);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["lower-third"] = tl;
+  </script>
+</body>
+</html>

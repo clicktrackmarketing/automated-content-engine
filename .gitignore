@@ -1,0 +1,40 @@
+# Media files
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+*.aac
+*.m4a
+
+# Images (keep READMEs, exclude actual media)
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Project outputs
+projects/
+
+# Reference frames (copyrighted)
+brand/reference-edits/frames/
+brand/reference-edits/*.mp4
+
+# Logo source files
+brand/logos/*.png
+brand/logos/*.svg
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Temp files
+/tmp/
+*.tmp

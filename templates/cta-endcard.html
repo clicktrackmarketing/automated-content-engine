@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-bg: #12284D;
+      --brand-accent: #18C0E7;
+      --brand-cta: #FE6601;
+      --brand-positive: #61CE70;
+      --brand-text: #FFFFFF;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      font-family: 'Montserrat', 'Inter', 'Poppins', sans-serif;
+    }
+    .endcard {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .endcard-bg {
+      position: absolute;
+      inset: 0;
+      /* Uses brand-bg with transparency */
+      background: linear-gradient(180deg, rgba(18,40,77,0.85) 0%, rgba(18,40,77,0.95) 100%);
+      opacity: 0;
+    }
+    .endcard-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 40px;
+    }
+    .cta-brand {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--brand-accent);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    .cta-heading {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--brand-text);
+      line-height: 1.2;
+      opacity: 0;
+      transform: scale(0.85);
+      max-width: 800px;
+    }
+    .cta-divider {
+      width: 50px;
+      height: 3px;
+      background: var(--brand-accent);
+      border-radius: 2px;
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .cta-detail {
+      font-size: 24px;
+      color: rgba(255,255,255,0.8);
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .cta-button {
+      background: var(--brand-cta);
+      color: var(--brand-text);
+      font-size: 22px;
+      font-weight: 700;
+      padding: 16px 48px;
+      border-radius: 50px;
+      opacity: 0;
+      transform: translateY(20px);
+      letter-spacing: 1px;
+    }
+    .cta-url {
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 400;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div
+    id="root"
+    data-composition-id="cta-endcard"
+    data-start="0"
+    data-duration="5"
+    data-width="1920"
+    data-height="1080"
+  >
+    <div class="endcard">
+      <div class="endcard-bg" id="endcard-bg"></div>
+      <div class="endcard-content">
+        <div id="cta-brand" class="cta-brand">Your Brand Name</div>
+        <div id="cta-heading" class="cta-heading">Your Call to Action</div>
+        <div id="cta-divider" class="cta-divider"></div>
+        <div id="cta-detail" class="cta-detail">Your CTA Subline Here</div>
+        <div id="cta-button" class="cta-button">Book Now</div>
+        <div id="cta-url" class="cta-url">yourbrand.com</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.to("#endcard-bg", { opacity: 1, duration: 0.6, ease: "power2.out" }, 0);
+    tl.to("#cta-brand", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.2);
+    tl.to("#cta-heading", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.5)" }, 0.4);
+    tl.to("#cta-divider", { opacity: 1, scaleX: 1, duration: 0.4, ease: "power2.out" }, 0.8);
+    tl.to("#cta-detail", { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 1.0);
+    tl.to("#cta-button", { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.7)" }, 1.2);
+    tl.to("#cta-url", { opacity: 1, duration: 0.3, ease: "power2.out" }, 1.5);
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines["cta-endcard"] = tl;
+  </script>
+</body>
+</html>
