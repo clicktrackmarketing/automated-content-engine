@@ -38,3 +38,16 @@ node_modules/
 # Temp files
 /tmp/
 *.tmp
+
+# ── Client / brand material — never in this PUBLIC repo ──────────────
+# This repo ships the engine plus the neutral "Acme Video Co" example brand.
+# Your own brand pack and per-video client work stay local.
+output/
+brand/ctm-brand.md
+brand/ctm-brand.local.md
+brand/ctm.local/
+brand/logos/*
+!brand/logos/README.md
+
+# Hook blocklist of internal identifiers — must never be tracked in a public repo
+.githooks/private-patterns.txt

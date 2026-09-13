@@ -1,0 +1,17 @@
+# Internal strings that must never be committed to this PUBLIC repo.
+# Copy to `private-patterns.txt` (git-ignored) and fill in your own values.
+#
+# One per line.  Either:
+#     <label>|<literal string>
+# or just:
+#     <literal string>
+# Matching is case-insensitive, literal (not regex).
+#
+# IMPORTANT: this .example file is TRACKED, so never put real values here.
+# The real list lives in private-patterns.txt, which is git-ignored — otherwise
+# the blocklist would publish the very identifiers it is meant to protect.
+#
+# Examples of what belongs in the real file:
+# GHL location id|your-location-id-here
+# Brand navy|#000000
+# Company domain|yourcompany.com
