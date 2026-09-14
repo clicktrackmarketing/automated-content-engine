@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy next to your cover specs as brand.json. Values here are the neutral example brand — replace with your own (see docs/customization-guide.md).",
+  "colors": {
+    "bg":      "#12284D",
+    "bg2":     "#0a1730",
+    "accent":  "#18C0E7",
+    "accent2": "#4fd8ff",
+    "text":    "#f8fafc",
+    "muted":   "#c9d7e8"
+  },
+  "fontsDir": "assets/fonts",
+  "logoB64":  "assets/logo.b64"
+}
