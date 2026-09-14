@@ -274,6 +274,12 @@ false failure on a post that was in fact created. A successful update returns **
 Delivery is driven entirely by `accountIds`; do not treat that field as the target and do not
 delete and recreate a post because of it.
 
+**Setting a video cover/thumbnail:** send it as `media[].thumbnail`. A top-level
+`thumbnail` on write is rejected with 422 "property thumbnail should not exist". On read,
+GHL has **promoted it to the post-level `thumbnail` field and blanked `media[].thumbnail`** —
+so verify the cover by reading `thumbnail`, not `media[0].thumbnail`, or a successful update
+looks like a failure.
+
 **Listing posts:** `POST /social-media-posting/{locationId}/posts/list` with
 `{"type":"all","limit":"20","skip":"0"}`. `limit` and `skip` must be **strings** — numbers
 return 422 `"limit must be a number string"`.
