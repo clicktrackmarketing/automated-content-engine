@@ -5,6 +5,12 @@
 
 ## Overview
 
+> **Running it by hand?** See [`RUNBOOK.md`](RUNBOOK.md) for the step-by-step manual path
+> (footage → normalise → pause detection → overlays → composite → verify → publish), and
+> [`editing-method.md`](editing-method.md) for why the pause-detection and verification
+> steps work the way they do.
+
+
 Two Claude Code commands handle video content from raw footage to scheduled social posts:
 
 | Command | Use When |
