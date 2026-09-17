@@ -37,6 +37,8 @@ const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const hl = s => esc(s).split('|').map((p,i)=> i%2 ? `<span class="hl">${p}</span>` : p).join('').replace(/\n/g,'<br>');
 const face = w => `@font-face{font-family:'Brand';font-weight:${w};src:url('fonts/inter-${w}.woff2') format('woff2');font-display:block}`;
 
+const CANVAS = { reel:[1080,1920], square:[1080,1080], portrait:[1080,1350] };
+const [CW,CH] = CANVAS[spec.canvas || 'reel'] || CANVAS.reel;
 const T = spec.textTop;   // optional override: px from top
 // INSTAGRAM REEL SAFE ZONES on a 1080x1920 canvas:
 //   right  210px  action rail (like / comment / share / more)
@@ -44,19 +46,21 @@ const T = spec.textTop;   // optional override: px from top
 //   top    140px  header strip
 // The profile-grid crop (y 420..1500) overlaps this almost exactly, so content
 // that clears the rail and the caption also survives the grid crop.
-const SAFE = { top:140, right:210, bottom:430, left:72 };
+const K = CH/1920;                       // vertical scale for non-reel canvases
+const px = v => Math.round(v*K);
+const SAFE = { top:px(140), right:210, bottom:spec.canvas && spec.canvas!=='reel' ? px(120) : 430, left:72 };
 const LAYOUTS = {
   // photo full-bleed, gradient scrim rising from the bottom
   scrim: `
     .photo{position:absolute;inset:0;background:url('data:${mime};base64,${PHOTO}') ${spec.focus||'50% 18%'}/cover no-repeat}
     .veil{position:absolute;inset:0;background:linear-gradient(180deg,
       rgba(10,23,46,.62) 0%, rgba(10,23,46,.10) 22%, rgba(7,15,29,.80) 56%, rgba(7,15,29,.97) 100%)}
-    .text{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${T||660}px}`,
+    .text{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${T||px(660)}px}`,
   // solid brand band across the grid-safe middle
   band: `
     .photo{position:absolute;inset:0;background:url('data:${mime};base64,${PHOTO}') ${spec.focus||'50% 26%'}/cover no-repeat}
     .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,15,29,.45),rgba(7,15,29,.62))}
-    .text{position:absolute;left:0;right:0;top:${T||700}px;padding:52px ${SAFE.right}px 52px ${SAFE.left}px;
+    .text{position:absolute;left:0;right:0;top:${T||px(700)}px;padding:52px ${SAFE.right}px 52px ${SAFE.left}px;
       background:linear-gradient(180deg,rgba(10,23,46,.0),rgba(10,23,46,.96) 14%,rgba(10,23,46,.96) 86%,rgba(10,23,46,0));
       border-top:3px solid ${C.accent};border-bottom:3px solid ${C.accent}}`,
   // photo on top, solid brand block beneath — most legible, best for long hooks
@@ -64,19 +68,19 @@ const LAYOUTS = {
     .stage{background:
       radial-gradient(130% 55% at 50% 100%,${C.accent}22,transparent 62%),
       linear-gradient(180deg,${C.bg} 0%,${C.bg2} 100%)}
-    .photo{position:absolute;left:0;right:0;top:0;height:1120px;
+    .photo{position:absolute;left:0;right:0;top:0;height:${px(1120)}px;
       background:url('data:${mime};base64,${PHOTO}') ${spec.focus||'50% 22%'}/cover no-repeat}
-    .veil{position:absolute;left:0;right:0;top:0;height:1120px;
+    .veil{position:absolute;left:0;right:0;top:0;height:${px(1120)}px;
       background:linear-gradient(180deg,rgba(10,23,46,.35) 0%,rgba(10,23,46,0) 34%,rgba(10,23,46,.92) 100%)}
-    .grid{height:1120px;bottom:auto}
-    .text{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${T||980}px}`
+    .grid{height:${px(1120)}px;bottom:auto}
+    .text{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${T||px(980)}px}`
 };
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><style>
 ${[400,600,700,800,900].map(face).join('\n')}
 :root{--navy:${C.bg};--navy2:${C.bg2};--cy:${C.accent};--cyg:${C.accent2};--tx:${C.text};--mut:${C.muted}}
 html,body{margin:0;background:#000}*{box-sizing:border-box}
-.stage{width:1080px;height:1920px;position:relative;overflow:hidden;font-family:'Brand',system-ui,sans-serif;color:var(--tx);background:var(--navy2)}
+.stage{width:${CW}px;height:${CH}px;position:relative;overflow:hidden;font-family:'Brand',system-ui,sans-serif;color:var(--tx);background:var(--navy2)}
 ${LAYOUTS[spec.layout || 'scrim']}
 .grid{position:absolute;inset:0;opacity:.05;
   background-image:linear-gradient(rgba(20,195,235,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(20,195,235,.6) 1px,transparent 1px);
@@ -93,7 +97,7 @@ ${LAYOUTS[spec.layout || 'scrim']}
 .sub b{color:var(--tx)}
 .logo{position:absolute;left:${SAFE.left}px;${spec.logoPos==='top' ? `top:${SAFE.top}px` : `bottom:${SAFE.bottom}px`};width:330px;filter:drop-shadow(0 6px 22px rgba(0,0,0,.6))}
 ${spec.debug ? `
-.safe{position:absolute;left:0;right:0;top:420px;height:1080px;border:4px dashed rgba(255,80,80,.8);pointer-events:none}
+.safe{position:absolute;left:0;right:0;top:${px(420)}px;height:${px(1080)}px;border:4px dashed rgba(255,80,80,.8);pointer-events:none}
 .safe::after{content:"GRID CROP";position:absolute;top:8px;left:12px;font:700 24px 'Brand';color:rgba(255,80,80,.95);letter-spacing:3px}
 .reel{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${SAFE.top}px;bottom:${SAFE.bottom}px;
   border:4px dashed rgba(80,255,140,.85);pointer-events:none}
