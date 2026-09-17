@@ -34,7 +34,7 @@ git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude).githooks/*' ':(exclude
 
 cat > "$WORK/pat" <<'PATTERNS'
 Anthropic key|sk-ant-[A-Za-z0-9_-]{20,}|strict
-OpenAI key|sk-[A-Za-z0-9]{32,}|strict
+OpenAI key|sk-(proj-|svcacct-|admin-)?[A-Za-z0-9_-]{32,}|strict
 GitHub token|gh[pousr]_[A-Za-z0-9]{30,}|strict
 GitHub PAT|github_pat_[A-Za-z0-9_]{50,}|strict
 AWS access key|AKIA[0-9A-Z]{16}|strict
