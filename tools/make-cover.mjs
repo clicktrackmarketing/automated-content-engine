@@ -48,6 +48,7 @@ const T = spec.textTop;   // optional override: px from top
 // that clears the rail and the caption also survives the grid crop.
 const K = CH/1920;                       // vertical scale for non-reel canvases
 const px = v => Math.round(v*K);
+const PHOTO_H = spec.photoH ? Number(spec.photoH) : px(1120);   // split-layout photo height
 const SAFE = { top:px(140), right:210, bottom:spec.canvas && spec.canvas!=='reel' ? px(120) : 430, left:72 };
 const LAYOUTS = {
   // photo full-bleed, gradient scrim rising from the bottom
@@ -68,11 +69,11 @@ const LAYOUTS = {
     .stage{background:
       radial-gradient(130% 55% at 50% 100%,${C.accent}22,transparent 62%),
       linear-gradient(180deg,${C.bg} 0%,${C.bg2} 100%)}
-    .photo{position:absolute;left:0;right:0;top:0;height:${px(1120)}px;
+    .photo{position:absolute;left:0;right:0;top:0;height:${PHOTO_H}px;
       background:url('data:${mime};base64,${PHOTO}') ${spec.focus||'50% 22%'}/cover no-repeat}
-    .veil{position:absolute;left:0;right:0;top:0;height:${px(1120)}px;
+    .veil{position:absolute;left:0;right:0;top:0;height:${PHOTO_H}px;
       background:linear-gradient(180deg,rgba(10,23,46,.35) 0%,rgba(10,23,46,0) 34%,rgba(10,23,46,.92) 100%)}
-    .grid{height:${px(1120)}px;bottom:auto}
+    .grid{height:${PHOTO_H}px;bottom:auto}
     .text{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;top:${T||px(980)}px}`
 };
 
@@ -96,6 +97,9 @@ ${LAYOUTS[spec.layout || 'scrim']}
 .sub{margin-top:26px;font-weight:700;font-size:44px;line-height:1.22;color:var(--mut)}
 .sub b{color:var(--tx)}
 .logo{position:absolute;left:${SAFE.left}px;${spec.logoPos==='top' ? `top:${SAFE.top}px` : `bottom:${SAFE.bottom}px`};width:330px;filter:drop-shadow(0 6px 22px rgba(0,0,0,.6))}
+.foot{position:absolute;left:${SAFE.left}px;right:${SAFE.right}px;bottom:${spec.canvas && spec.canvas!=='reel' ? 48 : (spec.logoPos==='top' ? SAFE.bottom : Math.round(SAFE.bottom+110))}px;
+  font-weight:700;font-size:30px;letter-spacing:6px;text-transform:uppercase;color:var(--tx)}
+.foot .hl{color:var(--cy)}
 ${spec.debug ? `
 .safe{position:absolute;left:0;right:0;top:${px(420)}px;height:${px(1080)}px;border:4px dashed rgba(255,80,80,.8);pointer-events:none}
 .safe::after{content:"GRID CROP";position:absolute;top:8px;left:12px;font:700 24px 'Brand';color:rgba(255,80,80,.95);letter-spacing:3px}
@@ -111,6 +115,7 @@ ${spec.debug ? `
     ${spec.subline ? `<div class="sub">${hl(spec.subline)}</div>` : '<div class="rule"></div>'}
   </div>
   ${LOGO ? `<img class="logo" src="${LOGO}" alt="">` : ''}
+  ${spec.footer ? `<div class="foot">${hl(spec.footer)}</div>` : ''}
   ${spec.debug ? '<div class="safe"></div><div class="reel"></div>' : ''}
 </div></body></html>`;
 
