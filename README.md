@@ -10,6 +10,14 @@ An AI-powered video content pipeline built on [Claude Code](https://docs.anthrop
 - **Style compliance** (`/style-check`) — Audits overlays and templates against brand standards
 - **B-roll prompts** (`/broll-prompts`) — Generates Higgsfield prompts from scripts
 
+## Documentation
+
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — step-by-step: footage to scheduled post
+- [docs/editing-method.md](docs/editing-method.md) — pause detection, tightening, verification
+- [docs/SOP-video-content-pipeline.md](docs/SOP-video-content-pipeline.md) — the slash-command workflow
+- [docs/customization-guide.md](docs/customization-guide.md) — replacing the example brand
+- [SECURITY.md](SECURITY.md) — secrets and the pre-commit guard
+
 ## Architecture
 
 ```

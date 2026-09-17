@@ -56,8 +56,13 @@ Uploads a local video file to the publisher's media library. Returns a public UR
 - `--media-url` — hosted media URL (from upload script)
 
 **Post type values:**
-- **Instagram Reels**: `--post-type reel`
-- **YouTube Shorts / LinkedIn**: `--post-type post`
+- **Instagram Reels**: `reel`
+- **YouTube Shorts**: `reel`  ← a 9:16 video posted as `post` uploads as a STANDARD
+  video, not a Short, even when the file is genuinely 1080x1920.
+- **LinkedIn / Facebook / TikTok / standard YouTube**: `post`
+
+`type` is IMMUTABLE after creation. A `PUT` silently keeps the original value and still
+returns 200. To change it, DELETE the post and create it again.
 
 **Status values:**
 - `in_review` (default) — creates post in "Needs Approval" mode
@@ -67,6 +72,11 @@ Uploads a local video file to the publisher's media library. Returns a public UR
 1. Get the companyId: `GET /locations/{locationId}` → `location.companyId`
 2. Search users: `GET /users/search?companyId={companyId}&locationId={locationId}`
 3. Match by name/email to find the user ID
+
+Both of those need `locations.readonly` / `users.readonly`, which a posting-only PIT often
+does NOT have (they return 401 "token is not authorized for this scope"). Fallback that
+needs only `social-media-posting`: list prior posts and read `createdBy` (or `user.id`)
+off any one of them.
 
 ---
 
@@ -154,7 +164,9 @@ Run this check on **both** `final-reels.mp4` and `final-linkedin.mp4` before upl
 When reading caption files:
 
 - **Instagram** (`captions/instagram.md`): Use the full content as the `--summary` value
-- **YouTube** (`captions/youtube.md`): Extract the title for `--title`, use the description + hashtags as `--summary`
+- **YouTube** (`captions/youtube.md`): there is NO `title` parameter. Put the title in BOTH
+  places: as the first line of `summary` (followed by a blank line, then the description),
+  and as `youtubePostDetails.title`.
 - **LinkedIn** (`captions/linkedin.md`): Use the full content as the `--summary` value
 
 ---
@@ -237,5 +249,50 @@ If either is missing, report the error and stop.
 | `scheduledAt` | `scheduleDate` |
 | *(new)* | `userId` (required) |
 | *(new)* | `status` (`in_review` or `scheduled`) |
+
+**Platform detail blocks — exact casing matters.** A wrong key is rejected outright with
+422 `"property <name> should not exist"`:
+
+| Platform | Key | Shape |
+|---|---|---|
+| YouTube | `youtubePostDetails` | `{"privacyLevel":"public","title":"…","type":"video"}` |
+| TikTok | `tiktokPostDetails` | `{"privacyLevel":"PUBLIC_TO_EVERYONE"}` |
+| Google Business | `gmbPostDetails` | `{"gmbEventType":"STANDARD","actionType":"LEARN_MORE","url":"…"}` |
+
+NOT `youTubeDetails`, NOT `tikTokPostDetails`. There is also no `channel` field — sending
+one returns 422.
+
+**Accepted top-level keys on create:** `accountIds`, `summary`, `media`, `status`,
+`scheduleDate`, `userId`, `type`, and the platform detail block above. Anything else 422s.
+
+**Reading the response.** A successful create returns **201** with the post nested at
+`results.post`, not at the top level — a parser looking for a top-level `_id` will report a
+false failure on a post that was in fact created. A successful update returns **200
+`"Updated Post"`** with no post body at all.
+
+`platform` in the create response defaults to `"google"` regardless of the accounts targeted.
+Delivery is driven entirely by `accountIds`; do not treat that field as the target and do not
+delete and recreate a post because of it.
+
+**Setting a video cover/thumbnail:** send it as `media[].thumbnail`. A top-level
+`thumbnail` on write is rejected with 422 "property thumbnail should not exist". On read,
+GHL has **promoted it to the post-level `thumbnail` field and blanked `media[].thumbnail`** —
+so verify the cover by reading `thumbnail`, not `media[0].thumbnail`, or a successful update
+looks like a failure.
+
+**Listing posts:** `POST /social-media-posting/{locationId}/posts/list` with
+`{"type":"all","limit":"20","skip":"0"}`. `limit` and `skip` must be **strings** — numbers
+return 422 `"limit must be a number string"`.
+
+**Listing media:** `GET /medias/files` requires `altId`, `altType=location` AND `type`.
+Omitting `type` returns 422, which looks like a scope failure but is not.
+
+**Required scopes.** `social-media-posting` and `medias` are sufficient to upload and
+schedule. `locations.readonly` and `users.readonly` are NOT needed for posting — a 401 from
+`/locations/{id}` does not mean the token cannot post. Verify posting scope with
+`GET /social-media-posting/{locationId}/accounts` instead.
+
+**Google Business Profile:** Google deprecated video in Local Posts. A video payload may be
+accepted by GHL and still fail downstream at Google. Post a still image for GBP.
 
 **Media type values:** `video/mp4`, `video/quicktime`, `video/webm`, `image/jpeg`, `image/png`

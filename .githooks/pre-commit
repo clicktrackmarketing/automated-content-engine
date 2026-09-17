@@ -1,0 +1,91 @@
+#!/bin/sh
+# Pre-commit secret + internal-asset guard.
+#
+# Blocks a commit when staged content contains credentials, filenames that
+# usually hold them, or any string listed in .githooks/private-patterns.txt.
+#
+# Install:  ./scripts/install-hooks.sh     (sets core.hooksPath=.githooks)
+# Bypass :  git commit --no-verify         (only when you are certain)
+
+RED=$(printf '\033[31m'); YEL=$(printf '\033[33m'); DIM=$(printf '\033[2m'); OFF=$(printf '\033[0m')
+WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
+HITS="$WORK/hits"; : > "$HITS"
+
+note() { printf '  %s%s%s\n' "$RED" "$1" "$OFF" >> "$HITS"; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# ---------- 1. filenames that should never be committed ----------
+for f in $staged; do
+  case "$f" in
+    .env.example|*.env.example|.githooks/*|*.example) continue ;;
+    .env|.env.*|*/.env|*/.env.*)                      note "staged env file:        $f" ;;
+    *.pem|*.key|*.p12|*.pfx|*.keystore|*id_rsa*|*id_ed25519*)
+                                                      note "staged key file:        $f" ;;
+    *credentials.json|*service-account*.json|*serviceaccount*.json)
+                                                      note "staged credential file: $f" ;;
+  esac
+done
+
+# ---------- 2. credential patterns in ADDED lines ----------
+git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude).githooks/*' ':(exclude)*.example' \
+  | grep -E '^\+' | grep -vE '^\+\+\+' > "$WORK/added" 2>/dev/null
+
+cat > "$WORK/pat" <<'PATTERNS'
+Anthropic key|sk-ant-[A-Za-z0-9_-]{20,}|strict
+OpenAI key|sk-(proj-|svcacct-|admin-)?[A-Za-z0-9_-]{32,}|strict
+GitHub token|gh[pousr]_[A-Za-z0-9]{30,}|strict
+GitHub PAT|github_pat_[A-Za-z0-9_]{50,}|strict
+AWS access key|AKIA[0-9A-Z]{16}|strict
+Google API key|AIza[0-9A-Za-z_-]{35}|strict
+Slack token|xox[baprs]-[A-Za-z0-9-]{10,}|strict
+GHL private token|pit-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}|strict
+Stripe live key|[rs]k_live_[A-Za-z0-9]{20,}|strict
+JWT|eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}\.|strict
+Private key block|-----BEGIN [A-Z ]*PRIVATE KEY-----|strict
+Bearer token|[Bb]earer [A-Za-z0-9_.-]{25,}|loose
+Assigned secret|(api[_-]?key|apikey|secret|password|passwd|access[_-]?token|private[_-]?token)["']?[[:space:]]*[:=][[:space:]]*["'][^"']{16,}["']|loose
+PATTERNS
+
+if [ -s "$WORK/added" ]; then
+  while IFS= read -r rule; do
+    [ -z "$rule" ] && continue
+    label=${rule%%|*}; rest=${rule#*|}
+    re=${rest%|*}; mode=${rest##*|}
+    grep -nEi -- "$re" "$WORK/added" > "$WORK/raw" 2>/dev/null
+    # High-confidence patterns are never allow-listed by wording; only the fuzzy
+    # rules skip obvious placeholders. Escape hatch for both: pragma allowlist secret.
+    if [ "$mode" = "loose" ]; then
+      grep -viE 'your-|example|placeholder|changeme|xxxx|<[a-z_]+>|\$\{|\$[A-Z_]+' "$WORK/raw" > "$WORK/hit" 2>/dev/null
+    else
+      cp "$WORK/raw" "$WORK/hit"
+    fi
+    grep -vi 'pragma:[[:space:]]*allowlist[[:space:]]*secret' "$WORK/hit" | head -3 > "$WORK/hit2" 2>/dev/null
+    if [ -s "$WORK/hit2" ]; then
+      note "$label:"
+      sed 's/^/      /' "$WORK/hit2" | cut -c1-160 >> "$HITS"
+    fi
+  done < "$WORK/pat"
+fi
+
+# ---------- 3. internal strings (blocklist itself is never tracked) ----------
+PRIV=".githooks/private-patterns.txt"
+if [ -f "$PRIV" ] && [ -s "$WORK/added" ]; then
+  while IFS= read -r line; do
+    case "$line" in ''|\#*) continue ;; esac
+    if [ "${line#*|}" != "$line" ]; then label=${line%%|*}; pat=${line#*|}
+    else label="internal string"; pat="$line"; fi
+    grep -qiF -- "$pat" "$WORK/added" && note "internal asset staged:  $label"
+  done < "$PRIV"
+fi
+
+if [ -s "$HITS" ]; then
+  printf '\n%s  COMMIT BLOCKED — possible secret or internal asset%s\n\n' "$RED" "$OFF" >&2
+  cat "$HITS" >&2
+  printf '\n%s  Fix the lines above, or unstage the file.%s\n' "$YEL" "$OFF" >&2
+  printf '%s  Real secrets belong in .env (git-ignored), never a tracked file.%s\n' "$YEL" "$OFF" >&2
+  printf '%s  Deliberate override: git commit --no-verify%s\n\n' "$DIM" "$OFF" >&2
+  exit 1
+fi
+exit 0

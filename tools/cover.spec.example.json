@@ -1,0 +1,14 @@
+{
+  "_comment": "node tools/make-cover.mjs <this file>. Output is named from the headline.",
+  "photo":    "covers/src/headshot.jpg",
+  "layout":   "scrim",
+  "brand":    "brand.json",
+  "kicker":   "YOUR LABEL",
+  "headline": "The hook, with |accent words| in pipes.",
+  "subline":  "Optional supporting line.",
+  "focus":    "57% 30%",
+  "size":     104,
+  "logoPos":  "bottom",
+  "textTop":  null,
+  "debug":    false
+}
