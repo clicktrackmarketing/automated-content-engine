@@ -49,6 +49,7 @@ The GHL User ID is required for scheduling posts. To find it:
 | `ghl-post.sh` | Create/schedule a single-media post | See flags below |
 | `ghl-carousel-post.sh` | Create/schedule a **multi-image carousel** post | Same flags as `ghl-post.sh`, but repeatable `--media-url` (or `--media-urls <csv>`) in slide order |
 | `ghl-verify-published.sh` | Confirm what actually published on a day + engagement | `bash tools/publishers/ghl/ghl-verify-published.sh [YYYY-MM-DD]` |
+| `ghl-publish-batch.sh` | Schedule a whole rendered batch from its manifest (used by `/graphic-machine`) | `bash tools/publishers/ghl/ghl-publish-batch.sh <batch-dir> [--dry-run] [--status scheduled]` |
 
 ### ghl-post.sh Flags
 
