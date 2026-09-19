@@ -194,6 +194,13 @@ if [[ -z "$USER_ID" ]]; then
   fi
 fi
 
+# GHL requires an approver when submitting a post for review. Pass the posting
+# user as the approver for in_review posts. (bash 3.2-safe empty-array guard.)
+APPROVER_ARGS=()
+if [[ "$STATUS" == "in_review" && "$USER_ID" != "<auto-detect-unavailable>" ]]; then
+  APPROVER_ARGS=(--approver "$USER_ID")
+fi
+
 # ---- Flatten manifest into a control file + per-post caption/media files -----
 # control.tsv columns: idx, item_id, kind, target, platform, scheduleUTC, cap_status, link, n_media
 CTRL="${WORK}/control.tsv"
@@ -408,6 +415,7 @@ while IFS=$'\x1f' read -r IDX ITEM_ID KIND TARGET PLATFORM SCHED CAP_STATUS LINK
       CSV="$(IFS=,; echo "${UPLOADED_URLS[*]}")"
       OUT="$("$CAROUSEL_SH" \
         --account-id "$ACCT" --user-id "$USER_ID" \
+        "${APPROVER_ARGS[@]+"${APPROVER_ARGS[@]}"}" \
         --summary "$CAPTION" \
         --media-urls "$CSV" --media-type image/png \
         --status "$STATUS" --schedule "$SCHED" 2>&1)"
@@ -416,6 +424,7 @@ while IFS=$'\x1f' read -r IDX ITEM_ID KIND TARGET PLATFORM SCHED CAP_STATUS LINK
     graphic)
       OUT="$("$POST_SH" \
         --account-id "$ACCT" --user-id "$USER_ID" \
+        "${APPROVER_ARGS[@]+"${APPROVER_ARGS[@]}"}" \
         --summary "$CAPTION" \
         --media-url "${UPLOADED_URLS[0]}" --media-type image/png \
         --post-type post --status "$STATUS" --schedule "$SCHED" 2>&1)"
@@ -425,6 +434,7 @@ while IFS=$'\x1f' read -r IDX ITEM_ID KIND TARGET PLATFORM SCHED CAP_STATUS LINK
       if [[ -n "$LINK" ]]; then
         OUT="$("$POST_SH" \
           --account-id "$ACCT" --user-id "$USER_ID" \
+        "${APPROVER_ARGS[@]+"${APPROVER_ARGS[@]}"}" \
           --summary "$CAPTION" \
           --media-url "${UPLOADED_URLS[0]}" --media-type image/png \
           --post-type post --status "$STATUS" --schedule "$SCHED" \
@@ -433,6 +443,7 @@ while IFS=$'\x1f' read -r IDX ITEM_ID KIND TARGET PLATFORM SCHED CAP_STATUS LINK
       else
         OUT="$("$POST_SH" \
           --account-id "$ACCT" --user-id "$USER_ID" \
+        "${APPROVER_ARGS[@]+"${APPROVER_ARGS[@]}"}" \
           --summary "$CAPTION" \
           --media-url "${UPLOADED_URLS[0]}" --media-type image/png \
           --post-type post --status "$STATUS" --schedule "$SCHED" 2>&1)"
