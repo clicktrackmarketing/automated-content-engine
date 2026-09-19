@@ -17,6 +17,8 @@ MEDIA_TYPE="video/mp4"
 SCHEDULE=""
 POST_TYPE=""
 STATUS="in_review"
+CTA_URL=""
+CTA_TYPE="LEARN_MORE"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -29,6 +31,8 @@ while [[ $# -gt 0 ]]; do
     --schedule)    SCHEDULE="$2"; shift 2 ;;
     --post-type)   POST_TYPE="$2"; shift 2 ;;
     --status)      STATUS="$2"; shift 2 ;;
+    --cta-url)     CTA_URL="$2"; shift 2 ;;    # Google Business Profile CTA button link
+    --cta-type)    CTA_TYPE="$2"; shift 2 ;;   # LEARN_MORE|BOOK|ORDER|SHOP|SIGN_UP|CALL
     *)             echo "Unknown flag: $1" >&2; exit 1 ;;
   esac
 done
@@ -50,6 +54,8 @@ export _MEDIA_TYPE="$MEDIA_TYPE"
 export _SCHEDULE="$SCHEDULE"
 export _POST_TYPE="${POST_TYPE:-post}"
 export _STATUS="$STATUS"
+export _CTA_URL="$CTA_URL"
+export _CTA_TYPE="$CTA_TYPE"
 
 JSON_BODY=$(python3 << 'PYEOF'
 import json, sys, os
@@ -69,6 +75,15 @@ if schedule:
 
 post_type = os.environ.get('_POST_TYPE', 'post').lower()
 body['type'] = post_type
+
+# Google Business Profile call-to-action button (ignored by other platforms).
+cta_url = os.environ.get('_CTA_URL', '')
+if cta_url:
+    body['gmbPostDetails'] = {
+        'gmbEventType': 'STANDARD',
+        'actionType': os.environ.get('_CTA_TYPE', 'LEARN_MORE'),
+        'url': cta_url,
+    }
 
 print(json.dumps(body))
 PYEOF

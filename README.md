@@ -6,6 +6,8 @@ An AI-powered video content pipeline built on [Claude Code](https://docs.anthrop
 
 - **Single video editing** (`/edit-video`) — Takes filmed footage and produces a branded video with multi-angle cuts, word-level captions, title cards, AI B-roll, and CTA end cards
 - **Batch content production** (`/content-machine`) — Takes multiple topics or videos and produces scheduled posts across Instagram Reels, YouTube Shorts, LinkedIn, TikTok, and Facebook with 2 approval gates
+- **Graphic posts** (`/graphic-post`) — Generates a top-notch, on-brand still graphic (announcement / statement / stat / checklist / quote layouts), writes per-channel captions, and schedules it to the image-friendly accounts (Facebook, Instagram, LinkedIn, Google Business Profile) with a publish-verification step
+- **Carousel posts** (`/carousel-post`) — Generates a multi-slide, on-brand carousel (cover hook → body slides → CTA, with progress counter, swipe cue, and a consistent set system), writes per-channel captions, and schedules it to the carousel-capable accounts (Instagram, LinkedIn, Facebook; cover-only to Google Business Profile) with verification
 - **Brief generation** (`/video-brief`) — Creates production-ready video briefs from topics
 - **Style compliance** (`/style-check`) — Audits overlays and templates against brand standards
 - **B-roll prompts** (`/broll-prompts`) — Generates Higgsfield prompts from scripts
