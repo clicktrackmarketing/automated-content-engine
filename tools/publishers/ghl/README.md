@@ -46,7 +46,8 @@ The GHL User ID is required for scheduling posts. To find it:
 | `ghl-accounts.sh` | List connected social accounts | `bash tools/publishers/ghl/ghl-accounts.sh` |
 | `ghl-upload-media.sh` | Upload **video** to GHL CDN | `bash tools/publishers/ghl/ghl-upload-media.sh <file>` |
 | `ghl-upload-image.sh` | Upload **image** (png/jpg/webp/gif) to GHL CDN | `bash tools/publishers/ghl/ghl-upload-image.sh <file>` |
-| `ghl-post.sh` | Create/schedule a post | See flags below |
+| `ghl-post.sh` | Create/schedule a single-media post | See flags below |
+| `ghl-carousel-post.sh` | Create/schedule a **multi-image carousel** post | Same flags as `ghl-post.sh`, but repeatable `--media-url` (or `--media-urls <csv>`) in slide order |
 | `ghl-verify-published.sh` | Confirm what actually published on a day + engagement | `bash tools/publishers/ghl/ghl-verify-published.sh [YYYY-MM-DD]` |
 
 ### ghl-post.sh Flags
