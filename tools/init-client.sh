@@ -33,6 +33,19 @@ if [ -d "$DIR" ]; then
 fi
 
 mkdir -p "${DIR}/assets/fonts"
+mkdir -p "${DIR}/media/headshots" "${DIR}/media/photos" "${DIR}/media/backgrounds" "${DIR}/media/logos"
+
+cat > "${DIR}/media/README.txt" << 'TXT'
+Client media for use in posts. Drop files here, then reference them in a spec via
+"photo": "media/<folder>/<file>" (relative to this client pack).
+
+  headshots/    people — for cover slides / announcement bands
+  photos/       real photos (office, work, product)
+  backgrounds/  full-bleed background images / textures
+  logos/        partner / certification logos
+
+Use high-res (>=1500px) JPG/PNG; keep faces clear of the caption band.
+TXT
 
 # Token env var name, e.g. GHL_TOKEN_ACME_CO
 TOKEN_ENV="GHL_TOKEN_$(echo "$SLUG" | tr '[:lower:]-' '[:upper:]_')"

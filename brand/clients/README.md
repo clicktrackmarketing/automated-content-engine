@@ -18,8 +18,14 @@ brand/clients/<slug>/
   client.json            # GHL location + scheduling defaults
   assets/fonts/          # the brand's woff2 web fonts (drop them in)
   assets/logo.b64        # the light logo as a data:image/...;base64,... URI
+  media/                 # headshots/ photos/ backgrounds/ logos/ for use in posts
+  topics.seed.json       # content pillars + keywords (feeds /topic-queue)
   brand.md               # voice / per-channel caption notes
 ```
+
+Drop client photos in `media/` (headshots, photos, backgrounds, logos) and
+reference them from a spec with `"photo": "media/headshots/<file>.jpg"` — the
+generators composite it as a photo band with a brand scrim so text stays legible.
 
 Then:
 1. Set the brand colors in `graphic.brand.json`.
