@@ -174,14 +174,29 @@ ${schedList}
 `);
 }
 
+// --- estimate manual time saved ----------------------------------------------
+// Rough manual build time for one on-brand piece fanned out to its channels with
+// per-channel captions + scheduling (design + copy + upload/schedule + QA):
+//   graphic  ~60 min,  carousel ~120 min. Engine hands-on time is a few minutes.
+const MIN_PER = { graphic: 60, carousel: 120 };
+const nGraphic = manifestItems.filter(i => i.kind === 'graphic').length;
+const nCarousel = manifestItems.filter(i => i.kind === 'carousel').length;
+const savedMin = nGraphic * MIN_PER.graphic + nCarousel * MIN_PER.carousel;
+const savedHrs = (savedMin / 60).toFixed(1);
+
 // --- write manifest + review -------------------------------------------------
-const manifest = { batch: batchName, brand: BRAND_ABS, timezone: TZ, startDate, items: manifestItems };
+const manifest = { batch: batchName, brand: BRAND_ABS, timezone: TZ, startDate,
+  timeSaved: { graphics: nGraphic, carousels: nCarousel, minutes: savedMin, hours: Number(savedHrs) },
+  items: manifestItems };
 writeFileSync(join(OUT, 'batch.manifest.json'), JSON.stringify(manifest, null, 2));
 
 const review = `# Graphic Machine — ${batchName}
 
-${manifestItems.length} item(s) rendered. Review each below; **uncheck** any you don't want, and
-add change notes. Nothing publishes until you confirm. Boxes are pre-checked to reduce friction.
+${manifestItems.length} item(s) rendered — ${nGraphic} graphic(s) + ${nCarousel} carousel(s). Review each below;
+**uncheck** any you don't want, and add change notes. Nothing publishes until you confirm.
+Boxes are pre-checked to reduce friction.
+
+⏱️ **Estimated manual time saved: ~${savedHrs} hours** (${nGraphic}×~1h graphic + ${nCarousel}×~2h carousel — design + per-channel captions + scheduling; engine hands-on time is a few minutes).
 
 Full set to Instagram / Facebook / LinkedIn; Google Business Profile gets the **cover only**
 (it can't do carousels). Verify after publishing with \`ghl-verify-published.sh\`.
