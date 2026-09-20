@@ -24,7 +24,22 @@ Per-topic format:
 - Otherwise infer: step-by-step / listicle / "how to" / "N ways" / checklist topics → **carousel**; a single hook, stat, or announcement → **graphic**.
 
 Optional flags: `--start YYYY-MM-DD` (first publish day; default tomorrow), `--platforms a,b,c`
-(default `instagram,facebook,linkedin,linkedin_personal,gbp`).
+(default `instagram,facebook,linkedin,linkedin_personal,gbp`), and `--client <slug>` to run for a
+specific client's brand pack.
+
+## Multi-client
+
+Run for any client via a brand pack in `brand/clients/<slug>/` (see `brand/clients/README.md`;
+create one with `bash tools/init-client.sh <slug> "Name"`). When `--client <slug>` is given (or the
+batch.json sets `"client": "<slug>"`), the batch resolves that client's brand tokens, timezone,
+posting times, default link and platforms from the pack, and the publisher routes every post to that
+client's GHL location using the token named in its `client.json` (`ghl.tokenEnv`, resolved from `.env`).
+Account IDs are discovered live per location. With no client, it uses the built-in local brand and the
+default `GHL_API_KEY` / `GHL_LOCATION_ID`.
+
+Set `"client": "<slug>"` at the top of the batch.json you author in step 1 — then the brand path and
+scheduling defaults come from the pack, and you only specify per-item `spec`, `captions`, and any
+`link`/`platforms` overrides.
 
 ---
 

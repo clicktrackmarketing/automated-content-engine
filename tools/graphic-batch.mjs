@@ -40,13 +40,30 @@ const batchAbs = resolve(batchPath);
 const batchBase = dirname(batchAbs);
 const batch = JSON.parse(readFileSync(batchAbs, 'utf8'));
 
-const BRAND_ABS = resolve(batchBase, batch.brand || '../../brand/ctm.local/graphic.brand.json');
+// Resolve the client pack (multi-client): batch.client -> brand/clients/<slug>/.
+// Falls back to batch.brand (or the built-in local brand) when no client is set.
+let CLIENT = null, CLIENT_DIR = null;
+if (batch.client) {
+  CLIENT_DIR = resolve(REPO, 'brand/clients', batch.client);
+  const cfgPath = join(CLIENT_DIR, 'client.json');
+  if (!existsSync(cfgPath)) {
+    console.error(`client not found: ${cfgPath} (run tools/init-client.sh ${batch.client})`);
+    process.exit(1);
+  }
+  CLIENT = JSON.parse(readFileSync(cfgPath, 'utf8'));
+}
+
+const BRAND_ABS = CLIENT
+  ? resolve(CLIENT_DIR, CLIENT.brand || 'graphic.brand.json')
+  : resolve(batchBase, batch.brand || '../../brand/ctm.local/graphic.brand.json');
 if (!existsSync(BRAND_ABS)) { console.error(`brand not found: ${BRAND_ABS}`); process.exit(1); }
 
-const TZ = batch.timezone || 'America/Los_Angeles';
+const TZ = batch.timezone || (CLIENT && CLIENT.timezone) || 'America/Los_Angeles';
 const PLATFORMS = ['instagram','facebook','linkedin','linkedin_personal','gbp'];
 const DEFAULT_TIMES = { linkedin:'08:30', linkedin_personal:'09:00', facebook:'10:00', instagram:'11:30', gbp:'12:30' };
-const TIMES = { ...DEFAULT_TIMES, ...(batch.platformTimes||{}) };
+const TIMES = { ...DEFAULT_TIMES, ...((CLIENT && CLIENT.platformTimes)||{}), ...(batch.platformTimes||{}) };
+const CLIENT_PLATFORMS = (CLIENT && Array.isArray(CLIENT.platforms) && CLIENT.platforms.length) ? CLIENT.platforms : PLATFORMS;
+const DEFAULT_LINK = (CLIENT && CLIENT.defaultLink) || '';
 const TARGET = { instagram:'instagram', facebook:'facebook', linkedin:'linkedin:page', linkedin_personal:'linkedin:personal', gbp:'gbp' };
 
 const today = new Date();
@@ -128,7 +145,8 @@ for (const item of (batch.items || [])) {
 
   // Schedule: one item per day; each platform at its slot that day.
   const day = addDays(startDate, dayCursor++);
-  const platforms = (item.platforms || PLATFORMS).filter(p => PLATFORMS.includes(p));
+  const platforms = (item.platforms || CLIENT_PLATFORMS).filter(p => PLATFORMS.includes(p));
+  const itemLink = item.link || DEFAULT_LINK;
   const posts = platforms.map(p => ({
     platform: p,
     target: TARGET[p],
@@ -137,7 +155,7 @@ for (const item of (batch.items || [])) {
     schedulePT: prettyPT(day, TIMES[p] || '10:00'),
   }));
 
-  manifestItems.push({ id, kind, title: item.title || id, media, captions: caps, link: item.link || '', posts });
+  manifestItems.push({ id, kind, title: item.title || id, media, captions: caps, link: itemLink, posts });
 
   // review.md chunk
   const dims = media.length ? PNG_DIMS(media[0]) : '?';
@@ -160,7 +178,7 @@ ${slideList}
 **Facebook:** ${capPrev('facebook')}
 **LinkedIn (page):** ${capPrev('linkedin')}
 ${caps.linkedin_personal!==undefined?`**LinkedIn (David):** ${capPrev('linkedin_personal')}\n`:''}**Google Business:** ${capPrev('gbp')}
-${item.link?`\n**Link:** ${item.link}`:''}
+${itemLink?`\n**Link:** ${itemLink}`:''}
 
 **Proposed schedule:**
 ${schedList}
@@ -186,6 +204,7 @@ const savedHrs = (savedMin / 60).toFixed(1);
 
 // --- write manifest + review -------------------------------------------------
 const manifest = { batch: batchName, brand: BRAND_ABS, timezone: TZ, startDate,
+  client: CLIENT ? { slug: CLIENT.slug || batch.client, name: CLIENT.name || batch.client, ghl: CLIENT.ghl || {} } : null,
   timeSaved: { graphics: nGraphic, carousels: nCarousel, minutes: savedMin, hours: Number(savedHrs) },
   items: manifestItems };
 writeFileSync(join(OUT, 'batch.manifest.json'), JSON.stringify(manifest, null, 2));

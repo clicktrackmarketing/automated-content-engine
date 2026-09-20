@@ -19,10 +19,12 @@ set -uo pipefail
 #   - Approval gate: unless --force, refuses to publish while any unchecked
 #     "- [ ]" box remains in <batchdir>/review.md.
 
-: "${GHL_API_KEY:?Set GHL_API_KEY environment variable (Private Integration Token)}"
-: "${GHL_LOCATION_ID:?Set GHL_LOCATION_ID environment variable}"
+# Credentials (GHL_API_KEY, GHL_LOCATION_ID) are resolved AFTER args + manifest:
+# a multi-client batch carries its client's GHL location/token, which overrides
+# the env defaults. The guard runs once creds are resolved (see below).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 UPLOAD_SH="${SCRIPT_DIR}/ghl-upload-image.sh"
 POST_SH="${SCRIPT_DIR}/ghl-post.sh"
 CAROUSEL_SH="${SCRIPT_DIR}/ghl-carousel-post.sh"
@@ -34,11 +36,13 @@ USER_ID=""
 STATUS="in_review"
 DRY_RUN=0
 FORCE=0
+CLIENT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --user-id) USER_ID="$2"; shift 2 ;;
     --status)  STATUS="$2"; shift 2 ;;
+    --client)  CLIENT="$2"; shift 2 ;;   # override: brand/clients/<slug>/client.json
     --dry-run) DRY_RUN=1; shift ;;
     --force)   FORCE=1; shift ;;
     -h|--help)
@@ -65,6 +69,41 @@ LOG="${BATCH_DIR}/publish-log.md"
 [[ -d "$BATCH_DIR" ]] || { echo "Error: batch directory not found: ${BATCH_DIR}" >&2; exit 1; }
 [[ -f "$MANIFEST" ]] || { echo "Error: manifest not found: ${MANIFEST}" >&2; exit 1; }
 command -v python3 >/dev/null 2>&1 || { echo "Error: python3 is required" >&2; exit 1; }
+
+# ---- Resolve GHL credentials (multi-client) ---------------------------------
+# Precedence: --client <slug> > the manifest's client block > env defaults.
+# A client's client.json gives the GHL locationId and the env var holding its
+# Private Integration Token (tokenEnv); those route posting to that sub-account.
+CLIENT_LOCATION=""
+CLIENT_TOKEN_ENV=""
+CLIENT_NAME=""
+if [[ -n "$CLIENT" ]]; then
+  CFG="${REPO_ROOT}/brand/clients/${CLIENT}/client.json"
+  [[ -f "$CFG" ]] || { echo "Error: client config not found: ${CFG} (run tools/init-client.sh ${CLIENT})" >&2; exit 1; }
+  CLIENT_LOCATION="$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1])).get("ghl") or {}).get("locationId","") or "")' "$CFG")"
+  CLIENT_TOKEN_ENV="$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1])).get("ghl") or {}).get("tokenEnv","") or "")' "$CFG")"
+  CLIENT_NAME="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1])).get("name","") or "")' "$CFG")"
+else
+  # Read the client block the batch engine wrote into the manifest, if any.
+  CLIENT_LOCATION="$(python3 -c 'import json,sys;c=json.load(open(sys.argv[1])).get("client") or {};print((c.get("ghl") or {}).get("locationId","") or "")' "$MANIFEST" 2>/dev/null || echo "")"
+  CLIENT_TOKEN_ENV="$(python3 -c 'import json,sys;c=json.load(open(sys.argv[1])).get("client") or {};print((c.get("ghl") or {}).get("tokenEnv","") or "")' "$MANIFEST" 2>/dev/null || echo "")"
+  CLIENT_NAME="$(python3 -c 'import json,sys;c=json.load(open(sys.argv[1])).get("client") or {};print(c.get("name","") or "")' "$MANIFEST" 2>/dev/null || echo "")"
+fi
+# The client's location/token override the env defaults so the batch posts to
+# the right sub-account. tokenEnv names an env var; resolve it indirectly.
+if [[ -n "$CLIENT_LOCATION" ]]; then GHL_LOCATION_ID="$CLIENT_LOCATION"; fi
+if [[ -n "$CLIENT_TOKEN_ENV" ]]; then
+  CLIENT_TOKEN_VAL="${!CLIENT_TOKEN_ENV:-}"
+  if [[ -n "$CLIENT_TOKEN_VAL" ]]; then
+    GHL_API_KEY="$CLIENT_TOKEN_VAL"
+  elif [[ -z "${GHL_API_KEY:-}" ]]; then
+    echo "Error: token env '${CLIENT_TOKEN_ENV}' for client '${CLIENT_NAME:-$CLIENT}' is not set. Add it to .env." >&2
+    exit 1
+  fi
+fi
+: "${GHL_API_KEY:?Set GHL_API_KEY (or the client's tokenEnv in .env)}"
+: "${GHL_LOCATION_ID:?Set GHL_LOCATION_ID (or the client's locationId in client.json)}"
+[[ -n "$CLIENT_NAME" ]] && echo "Client: ${CLIENT_NAME}  ·  GHL location ${GHL_LOCATION_ID}"
 
 # GHL QUIRK guard: a multi-image carousel created directly as status=scheduled
 # loses every slide but the first. If the batch contains any carousel post,

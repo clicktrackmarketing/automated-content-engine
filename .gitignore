@@ -46,6 +46,9 @@ output/
 brand/ctm-brand.md
 brand/ctm-brand.local.md
 brand/ctm.local/
+# Per-client brand packs (colors, logos, GHL location config) — local only
+brand/clients/
+!brand/clients/README.md
 brand/logos/*
 !brand/logos/README.md
 
