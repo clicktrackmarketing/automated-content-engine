@@ -1,0 +1,17 @@
+{
+  "_comment": "Reusable content angles for the topic engine. /topic-queue expands a client's pillars x these angles into concrete, on-brand topics. `format` is the suggested default (graphic = one idea; carousel = steps/lists/comparisons). {pillar}/{keyword}/{outcome}/{audience} are slots to fill from the client's topics.seed.json.",
+  "angles": [
+    { "key": "myth",        "label": "Myth-bust",      "format": "graphic",  "template": "The biggest myth about {pillar} — and the truth", "note": "Correct a common misbelief. Strong hook, one idea." },
+    { "key": "mistake",     "label": "Mistake list",   "format": "carousel", "template": "{n} {pillar} mistakes quietly costing you {outcome}", "note": "Enumerated pain points; each slide one mistake + fix." },
+    { "key": "howto",       "label": "How-to",         "format": "carousel", "template": "How to {outcome} with {pillar}", "note": "Step-by-step; one step per slide." },
+    { "key": "checklist",   "label": "Checklist",      "format": "carousel", "template": "The {pillar} checklist we run before {milestone}", "note": "Ticked items; save-worthy." },
+    { "key": "stat",        "label": "Stat / proof",   "format": "graphic",  "template": "The number that proves {pillar} matters", "note": "One big number + context. Never invent stats — mark [__] if unknown." },
+    { "key": "question",    "label": "Question hook",  "format": "graphic",  "template": "Is {problem} costing you {outcome}?", "note": "Provocative question the reader feels." },
+    { "key": "comparison",  "label": "Comparison",     "format": "carousel", "template": "{a} vs {b}: which wins for {pillar}", "note": "Side-by-side; resolve with a recommendation." },
+    { "key": "case",        "label": "Case / result",  "format": "carousel", "template": "How we {result} for a {audience}", "note": "Problem -> what we did -> outcome. Use real numbers only if given." },
+    { "key": "warning",     "label": "Warning / alert","format": "carousel", "template": "{cause} can silently break your {pillar}", "note": "Symptom -> cause -> fix. Timely / news-pegged when possible." },
+    { "key": "trend",       "label": "Trend / now",    "format": "graphic",  "template": "What {trend} means for your {pillar} right now", "note": "Tie a current shift to the client's world." },
+    { "key": "definition",  "label": "Explainer",      "format": "graphic",  "template": "What is {term} — and why it matters now", "note": "Define a concept the audience keeps hearing." },
+    { "key": "quickwin",    "label": "Quick win",      "format": "graphic",  "template": "One {pillar} fix you can ship today", "note": "A single, immediately actionable tip." }
+  ]
+}

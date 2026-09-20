@@ -44,8 +44,12 @@ The GHL User ID is required for scheduling posts. To find it:
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `ghl-accounts.sh` | List connected social accounts | `bash tools/publishers/ghl/ghl-accounts.sh` |
-| `ghl-upload-media.sh` | Upload video to GHL CDN | `bash tools/publishers/ghl/ghl-upload-media.sh <file>` |
-| `ghl-post.sh` | Schedule a post | See flags below |
+| `ghl-upload-media.sh` | Upload **video** to GHL CDN | `bash tools/publishers/ghl/ghl-upload-media.sh <file>` |
+| `ghl-upload-image.sh` | Upload **image** (png/jpg/webp/gif) to GHL CDN | `bash tools/publishers/ghl/ghl-upload-image.sh <file>` |
+| `ghl-post.sh` | Create/schedule a single-media post | See flags below |
+| `ghl-carousel-post.sh` | Create/schedule a **multi-image carousel** post | Same flags as `ghl-post.sh`, but repeatable `--media-url` (or `--media-urls <csv>`) in slide order |
+| `ghl-verify-published.sh` | Confirm what actually published on a day + engagement | `bash tools/publishers/ghl/ghl-verify-published.sh [YYYY-MM-DD]` |
+| `ghl-publish-batch.sh` | Schedule a whole rendered batch from its manifest (used by `/graphic-machine`) | `bash tools/publishers/ghl/ghl-publish-batch.sh <batch-dir> [--dry-run] [--status scheduled]` |
 
 ### ghl-post.sh Flags
 
@@ -59,6 +63,15 @@ The GHL User ID is required for scheduling posts. To find it:
 | `--schedule` | No | ISO 8601 datetime for scheduling |
 | `--post-type` | No | `reel` or `post` |
 | `--status` | No | `in_review` or `scheduled` |
+| `--cta-url` | No | Google Business Profile CTA button link (adds `gmbPostDetails`; ignored by other platforms) |
+| `--cta-type` | No | CTA action: `LEARN_MORE` (default), `BOOK`, `ORDER`, `SHOP`, `SIGN_UP`, `CALL` |
+
+### Verifying publication
+
+GHL soft-deletes the *scheduled* record at fire time and creates a new *published*
+one, so `GET /posts/{id}` on the original always looks unpublished. Use
+`ghl-verify-published.sh <date>` to read the real published records (status, live
+link, engagement) matched by account.
 
 ## GHL API Reference
 
