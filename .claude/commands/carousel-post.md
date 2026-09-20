@@ -86,6 +86,7 @@ Report each platform's status, live link, and engagement.
 ---
 
 ## Gotchas (learned)
+- **Carousels must be created `in_review`, not `scheduled`.** GHL collapses a multi-image post to a single image (only `media[0]`) when created directly as `status:"scheduled"` — and its PUT does the same. Multi-image only survives when created `in_review` (with `--approver <userId>`) then approved in GHL's Social Planner (approve preserves all slides). The scripts now refuse `--status scheduled` for carousels.
 - `media` order = display order; `media[0]` is the cover. Upload/collect slides in order.
 - All slides one aspect ratio; keep the set ≤10 (Instagram cap) — the script warns past 10.
 - `type` stays `post` for carousels (never `reel`); it's immutable after create (delete + recreate to change).

@@ -69,6 +69,15 @@ if [[ ${#MEDIA_URLS[@]} -gt 1 ]]; then
     exit 1
   fi
   POST_TYPE="post"
+  # GHL QUIRK: creating a multi-image post directly as status=scheduled collapses
+  # it to a SINGLE image (only media[0] persists). Multi-image only survives when
+  # created as in_review, then approved inside GHL. Refuse scheduled for >1 slide.
+  if [[ "$STATUS" == "scheduled" ]]; then
+    echo "Error: GHL drops all but the first image when a carousel is created with status=scheduled." >&2
+    echo "       Create it with --status in_review (add --approver <userId>), then approve it in GHL's" >&2
+    echo "       Social Planner — its approve action preserves all ${#MEDIA_URLS[@]} slides." >&2
+    exit 1
+  fi
 fi
 
 # Instagram caps carousels at 10 slides.

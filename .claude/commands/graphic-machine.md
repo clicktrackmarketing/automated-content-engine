@@ -78,6 +78,7 @@ Report per-platform status, live links, and engagement.
 ---
 
 ## Rules & gotchas
+- **Batches with carousels must publish `in_review`, not `scheduled`.** GHL drops all but the first image when a carousel is created directly as scheduled. Publish with `--status in_review`, then approve in GHL's Social Planner (approve preserves every slide). `ghl-publish-batch.sh` refuses `--status scheduled` when the batch contains any carousel.
 - ONE approval gate — the review file. Pre-check the boxes to reduce friction.
 - Spacing: one item per day; never more than one post per platform per day (the engine enforces this).
 - Carousels: all slides one aspect ratio, ≤10 slides; GBP gets the cover only.

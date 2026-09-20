@@ -66,6 +66,23 @@ LOG="${BATCH_DIR}/publish-log.md"
 [[ -f "$MANIFEST" ]] || { echo "Error: manifest not found: ${MANIFEST}" >&2; exit 1; }
 command -v python3 >/dev/null 2>&1 || { echo "Error: python3 is required" >&2; exit 1; }
 
+# GHL QUIRK guard: a multi-image carousel created directly as status=scheduled
+# loses every slide but the first. If the batch contains any carousel post,
+# require in_review (approve in GHL afterwards, which preserves all slides).
+if [[ "$STATUS" == "scheduled" ]]; then
+  HAS_CAROUSEL="$(python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))
+print("yes" if any(p.get("kind")=="carousel" for it in (d.get("items") or []) for p in (it.get("posts") or [])) else "no")
+' "$MANIFEST" 2>/dev/null || echo no)"
+  if [[ "$HAS_CAROUSEL" == "yes" ]]; then
+    echo "Error: this batch contains carousels, and GHL collapses a carousel to one image when" >&2
+    echo "       created with status=scheduled. Run with --status in_review, then approve the posts" >&2
+    echo "       in GHL's Social Planner (its approve action keeps all slides)." >&2
+    exit 1
+  fi
+fi
+
 # ---- Approval gate ----------------------------------------------------------
 if [[ $FORCE -eq 0 ]]; then
   if [[ ! -f "$REVIEW" ]]; then
