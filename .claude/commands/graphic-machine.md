@@ -43,6 +43,15 @@ scheduling defaults come from the pack, and you only specify per-item `spec`, `c
 
 ---
 
+## Starting from the topic queue (optional)
+
+With `--from-queue [N]` (default 5), pull the next N topics from the client's backlog instead of taking topics from the prompt:
+
+```bash
+node tools/topic-next.mjs <slug> --count <N> [--start YYYY-MM-DD]
+```
+This marks those topics used (no repeats) and writes `output/gm-<date>/topic-plan.json` — a list of `{id, title, format, pillar, hook, link}`. Author the batch.json (step 1) from that plan: each plan topic becomes an item with `kind` = its `format`, using the `hook`/`pillar` as the creative starting point. Requires a queue — build one first with `/topic-queue --client <slug>`.
+
 ## Pipeline
 
 ### 1. Author the batch spec (this is the craft step)

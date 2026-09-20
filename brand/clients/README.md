@@ -31,6 +31,21 @@ Then:
    name (e.g. `GHL_TOKEN_ACME=...`).
 4. Fill in `brand.md`, `defaultLink`, and the `platforms` list.
 
+## Build a topic backlog (optional but recommended)
+
+```bash
+/topic-queue --client <slug>
+```
+
+Generates `topics.queue.json` — a ranked list of concrete, on-brand topics from the
+pack's `topics.seed.json` (pillars, keywords) × the angle library in
+`tools/topic-angles.json`. Used topics are tracked in `topics.used.json` and never
+resurface. Then produce a batch straight from the top of the queue:
+
+```bash
+/graphic-machine --client <slug> --from-queue 5
+```
+
 ## Use a pack
 
 ```bash

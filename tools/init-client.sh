@@ -74,6 +74,17 @@ cat > "${DIR}/client.json" << JSON
 }
 JSON
 
+cat > "${DIR}/topics.seed.json" << JSON
+{
+  "_comment": "Content pillars + keywords for ${NAME}. /topic-queue expands these into a ranked topic backlog. Edit to the client's focus.",
+  "pillars": ["Pillar one", "Pillar two", "Pillar three"],
+  "audience": "who this client sells to",
+  "keywords": ["keyword one", "keyword two"],
+  "tone": "authoritative but plain-spoken",
+  "link": ""
+}
+JSON
+
 cat > "${DIR}/brand.md" << 'MD'
 # Brand voice & caption notes
 
@@ -102,5 +113,8 @@ echo "  2. Add fonts to brand/clients/${SLUG}/assets/fonts/ and the logo as"
 echo "     brand/clients/${SLUG}/assets/logo.b64 (a data:image/...;base64,... URI)."
 echo "  3. Set the GHL location in brand/clients/${SLUG}/client.json (locationId),"
 echo "     and put the Private Integration Token in .env as ${TOKEN_ENV}=..."
-echo "  4. Fill in brand/clients/${SLUG}/brand.md (voice) and defaultLink/platforms."
-echo "  5. Run:  /graphic-machine --client ${SLUG} topic one, topic two"
+echo "  4. Fill in brand/clients/${SLUG}/brand.md (voice), topics.seed.json (pillars),"
+echo "     and client.json defaultLink/platforms."
+echo "  5. Build a topic backlog:  /topic-queue --client ${SLUG}"
+echo "  6. Produce a batch from it:  /graphic-machine --client ${SLUG} --from-queue 5"
+echo "     (or pass topics directly: /graphic-machine --client ${SLUG} topic one, topic two)"
