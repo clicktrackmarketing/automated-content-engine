@@ -111,8 +111,24 @@ for (const item of (batch.items || [])) {
   const itemDir = join(OUT, 'items', id);
   mkdirSync(join(itemDir, 'captions'), { recursive: true });
 
+  // Resolve media paths (photo / bg) against the client pack (or batch dir) so a
+  // relative "media/..." reference points at the real file, wherever the spec is
+  // written. Absolute paths and data URIs pass through untouched.
+  const MEDIA_BASE = CLIENT_DIR || batchBase;
+  const resolveMedia = p => (!p || p.startsWith('data:') || p.startsWith('/')) ? p : resolve(MEDIA_BASE, p);
+  const withMedia = s => {
+    const o = { ...s };
+    if (o.photo) o.photo = resolveMedia(o.photo);
+    if (o.bg) o.bg = resolveMedia(o.bg);
+    return o;
+  };
+  let specSrc = withMedia(item.spec || {});
+  if (kind === 'carousel' && Array.isArray(specSrc.slides)) {
+    specSrc = { ...specSrc, slides: specSrc.slides.map(withMedia) };
+  }
+
   // Write the generator spec with brand + out pinned.
-  const spec = { ...item.spec, brand: BRAND_ABS, out: id };
+  const spec = { ...specSrc, brand: BRAND_ABS, out: id };
   const specPath = join(itemDir, 'spec.json');
   writeFileSync(specPath, JSON.stringify(spec, null, 2));
 

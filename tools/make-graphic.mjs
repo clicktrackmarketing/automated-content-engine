@@ -22,6 +22,9 @@
 //   quoteBy   quote layout: attribution line
 //   photo     optional image path for a top band (announcement/statement)
 //   focus     CSS object-position for the photo (e.g. "50% 25%")
+//   bg        optional full-bleed background image path (behind the whole slide)
+//   bgScrim   scrim strength over bg: "light" | "medium" (default) | "strong"
+//   bgFocus   CSS object-position for the bg image (e.g. "50% 30%")
 //   size      headline px override (else auto-fit by length)
 //   logoPos   "top" (default) | "none"
 //   footer    tagline override; set "" to hide (defaults to brand.footer)
@@ -87,6 +90,18 @@ const PHOTO = spec.photo && existsSync(R(spec.photo))
       mime: (spec.photo.split('.').pop()||'jpg').toLowerCase()==='png' ? 'image/png' : 'image/jpeg' }
   : null;
 const PHOTO_H = PHOTO ? Math.round(CH * 0.40) : 0;
+
+// Full-bleed background image (behind the whole slide) + brand scrim for legibility.
+const BG = spec.bg && existsSync(R(spec.bg))
+  ? { data: readFileSync(R(spec.bg)).toString('base64'),
+      mime: (spec.bg.split('.').pop()||'jpg').toLowerCase()==='png' ? 'image/png' : 'image/jpeg' }
+  : null;
+const SCRIMS = {
+  light:  'linear-gradient(180deg, rgba(10,23,46,.45), rgba(7,15,29,.68))',
+  medium: 'linear-gradient(180deg, rgba(10,23,46,.66), rgba(7,15,29,.85))',
+  strong: 'linear-gradient(180deg, rgba(10,23,46,.80), rgba(7,15,29,.93))',
+};
+const BG_SCRIM = SCRIMS[spec.bgScrim] || SCRIMS.medium;
 
 // --- layout bodies -----------------------------------------------------------
 const kickerHTML = spec.kicker
@@ -159,6 +174,9 @@ html,body{background:#000}
 .grid{position:absolute;inset:0;opacity:.05;
   background-image:linear-gradient(rgba(20,195,235,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(20,195,235,.6) 1px,transparent 1px);
   background-size:80px 80px}
+${BG ? `
+.bgphoto{position:absolute;inset:0;background:url('data:${BG.mime};base64,${BG.data}') ${spec.bgFocus||'50% 50%'}/cover no-repeat}
+.bgscrim{position:absolute;inset:0;background:${BG_SCRIM}}` : ''}
 ${PHOTO ? `
 .photo{position:absolute;left:0;right:0;top:0;height:${PHOTO_H}px;
   background:url('data:${PHOTO.mime};base64,${PHOTO.data}') ${spec.focus||'50% 22%'}/cover no-repeat}
@@ -208,6 +226,7 @@ ${PHOTO ? `
 ${spec.debug ? `.dbg{position:absolute;left:${PAD}px;right:${PAD}px;top:${Math.round(textTop+ (PHOTO?0:PAD))}px;bottom:${Math.round(PAD*1.15)}px;border:3px dashed rgba(255,90,90,.8);pointer-events:none}`:''}
 </style></head><body>
 <div class="stage" data-composition-id="graphic" data-fps="30" data-duration="0.5">
+  ${BG ? '<div class="bgphoto"></div><div class="bgscrim"></div>' : ''}
   <div class="grid"></div>
   ${PHOTO ? '<div class="photo"></div><div class="pveil"></div>' : ''}
   ${logoHTML}

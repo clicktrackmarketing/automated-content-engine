@@ -19,7 +19,8 @@
 //   role      "cover" | "body" | "cta"  (inferred: idx0=cover, last=cta, else body)
 //   type      "announcement" | "statement" | "stat" | "number" | "checklist" | "quote" | "image"
 //   plus make-graphic fields: kicker, headline, subline, items, stat, statUnit, number,
-//        statStyle, quoteBy, photo, focus, badge, badgeStyle, link, size
+//        statStyle, quoteBy, photo, focus, badge, badgeStyle, link, size,
+//        bg (full-bleed background image), bgScrim (light|medium|strong), bgFocus
 //   NOTE: a per-slide `canvas` is REJECTED — the aspect ratio is declared once at top level.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -133,6 +134,18 @@ function renderSlide(slide, index) {
         mime: (slide.photo.split('.').pop()||'jpg').toLowerCase()==='png' ? 'image/png' : 'image/jpeg' }
     : null;
   const PHOTO_H = PHOTO ? Math.round(CH * 0.40) : 0;
+
+  // Full-bleed background image (behind the whole slide) + brand scrim.
+  const BG = slide.bg && existsSync(R(slide.bg))
+    ? { data: readFileSync(R(slide.bg)).toString('base64'),
+        mime: (slide.bg.split('.').pop()||'jpg').toLowerCase()==='png' ? 'image/png' : 'image/jpeg' }
+    : null;
+  const SCRIMS = {
+    light:  'linear-gradient(180deg, rgba(10,23,46,.45), rgba(7,15,29,.68))',
+    medium: 'linear-gradient(180deg, rgba(10,23,46,.66), rgba(7,15,29,.85))',
+    strong: 'linear-gradient(180deg, rgba(10,23,46,.80), rgba(7,15,29,.93))',
+  };
+  const BG_SCRIM = SCRIMS[slide.bgScrim] || SCRIMS.medium;
 
   // headline size clamps by role (scaled for the active canvas)
   const auto = autoSize(slide.headline);
@@ -257,6 +270,9 @@ html,body{background:#000}
 .grid{position:absolute;inset:0;opacity:.05;
   background-image:linear-gradient(rgba(20,195,235,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(20,195,235,.6) 1px,transparent 1px);
   background-size:80px 80px}
+${BG ? `
+.bgphoto{position:absolute;inset:0;background:url('data:${BG.mime};base64,${BG.data}') ${slide.bgFocus||'50% 50%'}/cover no-repeat}
+.bgscrim{position:absolute;inset:0;background:${BG_SCRIM}}` : ''}
 ${PHOTO ? `
 .photo{position:absolute;left:0;right:0;top:0;height:${PHOTO_H}px;
   background:url('data:${PHOTO.mime};base64,${PHOTO.data}') ${slide.focus||'50% 22%'}/cover no-repeat}
@@ -324,6 +340,7 @@ ${PHOTO ? `
 .swipe .ar{font-size:36px;line-height:1;color:var(--cy)}
 </style></head><body>
 <div class="stage" data-composition-id="carousel-slide" data-fps="30" data-duration="0.5">
+  ${BG ? '<div class="bgphoto"></div><div class="bgscrim"></div>' : ''}
   <div class="grid"></div>
   ${PHOTO ? '<div class="photo"></div><div class="pveil"></div>' : ''}
   ${logoHTML}
