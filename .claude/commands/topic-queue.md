@@ -10,6 +10,7 @@ Usage: `/topic-queue --client <slug> [extra themes or focus for this refresh]`
 - `brand/clients/<slug>/brand.md` — voice / caption notes.
 - `tools/topic-angles.json` — the reusable angle library (myth, mistake-list, how-to, checklist, stat, question, comparison, case, warning, trend, explainer, quick-win) with each angle's default format.
 - `brand/clients/<slug>/topics.queue.json` and `topics.used.json` (if they exist) — so you do **not** repeat topics already queued or used.
+- The latest `output/perf-<slug>-*/perf.json` (if any) — the feedback loop. If present, **weight toward what's working**: lift the priority of topics in the winning pillars and formats (`leaders.pillar`, `leaders.format`, and the `byPillar`/`byFormat` tables), generate more topics in those pillars, and lean toward the winning format. Note in your summary that the queue was weighted by performance.
 
 ## Produce
 Generate **15–30 topics** by combining the client's pillars with the angle library — but write each as a **specific, concrete title**, not a filled-in template. Good: "Cloudflare's Bot Fight Mode can silently block your Google Ads". Weak: "A warning about Google Ads". Rules:
