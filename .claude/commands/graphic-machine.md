@@ -59,6 +59,7 @@ Write `output/gm-<YYYY-MM-DD>/batch.json`. For EACH topic decide the format, the
 - an on-brand generator `spec` (a `/graphic-post` spec for graphics; a `/carousel-post` slides spec for carousels — cover hook → one idea per body slide → CTA). Wrap only the 1–3 key words in `|pipes|`; CTM navy/cyan only; `badgeStyle:"warn"` for genuine alerts only.
 - five per-channel `captions` (`instagram`, `facebook`, `linkedin`, `linkedin_personal`, `gbp`) in each channel's voice; Instagram uses the full URL (never "link in bio" unless asked); GBP is concise (its link rides the CTA button).
 - the `link` and the `platforms` for that item.
+- **optional `background`** to sit the graphic (or carousel cover) on a vetted image from the curated library: `"background": "auto"` or `{ "pillar": "...", "mood": "tech|local|abstract|human|texture", "orientation": "portrait" }`. The engine picks a fitting, **licensed** background via `tools/bg-lib.mjs`, applies the recommended scrim for legibility, and varies picks across the batch. It's silently skipped when the library has no fit (renders text-only), and an explicit `bg` in the spec always wins. Use it for **covers, statements, and case studies** — not every checklist/number slide (clean typography is often stronger). Manage the library with `tools/bg-add.mjs` (enforces license + source); check it with `node tools/bg-lib.mjs --client <slug> --list`.
 
 Set the top-level `brand` to `../../brand/ctm.local/graphic.brand.json`, plus `startDate` and any
 `platformTimes`. See `tools/graphic-batch.mjs` header for the exact schema.

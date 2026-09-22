@@ -22,6 +22,9 @@
 //       "kind":"graphic" | "carousel",
 //       "title":"Cloudflare blocking Google Ads",
 //       "spec":{ ...make-graphic or make-carousel spec (no brand/out needed) },
+//       "background": "auto" | { "pillar":"...", "mood":"tech", "orientation":"portrait" },
+//                   // optional — pull a vetted bg from the curated library
+//                   // (tools/bg-lib.mjs); lands on the graphic / carousel cover.
 //       "captions":{ "instagram":"...", "facebook":"...", "linkedin":"...",
 //                    "linkedin_personal":"...", "gbp":"..." },
 //       "link":"https://...",
@@ -32,6 +35,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { pick as pickBackground } from './bg-lib.mjs';
 
 const REPO = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const batchPath = process.argv[2];
@@ -104,6 +108,7 @@ const PNG_DIMS = p => { try { const b=readFileSync(p); return `${b.readUInt32BE(
 const manifestItems = [];
 const reviewChunks = [];
 let dayCursor = 0;
+const usedBgs = [];   // backgrounds already used this batch, so picks vary
 
 for (const item of (batch.items || [])) {
   const id = item.id;
@@ -125,6 +130,28 @@ for (const item of (batch.items || [])) {
   let specSrc = withMedia(item.spec || {});
   if (kind === 'carousel' && Array.isArray(specSrc.slides)) {
     specSrc = { ...specSrc, slides: specSrc.slides.map(withMedia) };
+  }
+
+  // Optional background from the curated library: item.background = "auto" or
+  // { pillar?, mood?, orientation? }. Resolves via bg-lib and lands on the
+  // graphic (or the carousel cover). Silently skipped when the library has no
+  // fit, so an item always still renders text-only. An explicit spec `bg` wins.
+  if (item.background) {
+    const b = item.background === 'auto' ? {} : (item.background || {});
+    const orientation = b.orientation || specSrc.canvas || (kind === 'carousel' ? 'portrait' : 'square');
+    const chosen = pickBackground({
+      clientSlug: batch.client || null,
+      pillar: b.pillar || item.pillar,
+      mood: b.mood,
+      orientation,
+      exclude: usedBgs,
+    });
+    if (chosen) {
+      usedBgs.push(chosen.id);
+      const applyBg = o => { if (!o.bg) { o.bg = chosen.bg; o.bgScrim = o.bgScrim || chosen.bgScrim; if (chosen.bgFocus && !o.bgFocus) o.bgFocus = chosen.bgFocus; } };
+      if (kind === 'carousel' && Array.isArray(specSrc.slides) && specSrc.slides.length) applyBg(specSrc.slides[0]);
+      else applyBg(specSrc);
+    }
   }
 
   // Write the generator spec with brand + out pinned.

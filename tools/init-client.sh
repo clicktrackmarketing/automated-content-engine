@@ -47,6 +47,15 @@ Client media for use in posts. Drop files here, then reference them in a spec vi
 Use high-res (>=1500px) JPG/PNG; keep faces clear of the caption band.
 TXT
 
+# Curated background library (licensed only) — see tools/bg-lib.mjs / bg-add.mjs
+cat > "${DIR}/media/backgrounds/backgrounds.json" << 'JSON'
+{
+  "_comment": "Curated, LICENSED background library. NOT a dumping folder: every entry needs a license + source. Add with tools/bg-add.mjs; the selector is tools/bg-lib.mjs; /graphic-machine pulls from it when an item sets \"background\":\"auto\". Images here are gitignored (stay local).",
+  "_schema": { "file": "media/backgrounds/<name>", "mood": "tech|local|abstract|human|texture", "pillars": ["optional pillar names; [] = any"], "orientation": "portrait|square|any", "scrim": "light|medium|strong", "focus": "optional 'x% y%'", "license": "REQUIRED", "source": "REQUIRED url/where", "credit": "optional" },
+  "backgrounds": []
+}
+JSON
+
 # Token env var name, e.g. GHL_TOKEN_ACME_CO
 TOKEN_ENV="GHL_TOKEN_$(echo "$SLUG" | tr '[:lower:]-' '[:upper:]_')"
 
