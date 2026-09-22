@@ -17,7 +17,7 @@ set -euo pipefail
 DAY="${1:-$(date +%F)}"
 BASE="https://services.leadconnectorhq.com/social-media-posting/${GHL_LOCATION_ID}/posts/list"
 
-curl -s -X POST "$BASE" \
+curl -s --connect-timeout 15 --max-time 120 -X POST "$BASE" \
   -H "Authorization: Bearer ${GHL_API_KEY}" \
   -H "Version: 2021-07-28" \
   -H "Accept: application/json" \

@@ -11,7 +11,7 @@ set -euo pipefail
 BASE_URL="https://services.leadconnectorhq.com"
 ENDPOINT="/social-media-posting/${GHL_LOCATION_ID}/accounts"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" \
+RESPONSE=$(curl -s --connect-timeout 15 --max-time 120 -w "\n%{http_code}" \
   -X GET "${BASE_URL}${ENDPOINT}" \
   -H "Authorization: Bearer ${GHL_API_KEY}" \
   -H "Version: 2021-07-28" \

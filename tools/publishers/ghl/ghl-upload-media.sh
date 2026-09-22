@@ -26,7 +26,7 @@ case "$EXT" in
   *)    CONTENT_TYPE="video/mp4" ;;
 esac
 
-RESPONSE=$(curl -s -w "\n%{http_code}" \
+RESPONSE=$(curl -s --connect-timeout 15 --max-time 180 -w "\n%{http_code}" \
   -X POST "${BASE_URL}${ENDPOINT}" \
   -H "Authorization: Bearer ${GHL_API_KEY}" \
   -H "Version: 2021-07-28" \

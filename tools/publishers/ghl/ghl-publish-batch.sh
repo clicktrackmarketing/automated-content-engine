@@ -209,7 +209,7 @@ fi
 # ---- Determine posting user id ----------------------------------------------
 detect_user_id() {
   local resp code body
-  resp="$(curl -s -w $'\n%{http_code}' \
+  resp="$(curl -s --connect-timeout 15 --max-time 120 -w $'\n%{http_code}' \
     -X POST "https://services.leadconnectorhq.com/social-media-posting/${GHL_LOCATION_ID}/posts/list" \
     -H "Authorization: Bearer ${GHL_API_KEY}" \
     -H "Version: 2021-07-28" \

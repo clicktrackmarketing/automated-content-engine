@@ -142,7 +142,7 @@ print(json.dumps(body))
 PYEOF
 )
 
-RESPONSE=$(curl -s -w "\n%{http_code}" \
+RESPONSE=$(curl -s --connect-timeout 15 --max-time 120 -w "\n%{http_code}" \
   -X POST "${BASE_URL}${ENDPOINT}" \
   -H "Authorization: Bearer ${GHL_API_KEY}" \
   -H "Version: 2021-07-28" \
