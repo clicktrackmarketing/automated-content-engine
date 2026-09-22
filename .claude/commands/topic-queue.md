@@ -10,7 +10,14 @@ Usage: `/topic-queue --client <slug> [extra themes or focus for this refresh]`
 - `brand/clients/<slug>/brand.md` — voice / caption notes.
 - `tools/topic-angles.json` — the reusable angle library (myth, mistake-list, how-to, checklist, stat, question, comparison, case, warning, trend, explainer, quick-win) with each angle's default format.
 - `brand/clients/<slug>/topics.queue.json` and `topics.used.json` (if they exist) — so you do **not** repeat topics already queued or used.
-- The latest `output/perf-<slug>-*/perf.json` (if any) — the feedback loop. If present, **weight toward what's working**: lift the priority of topics in the winning pillars and formats (`leaders.pillar`, `leaders.format`, and the `byPillar`/`byFormat` tables), generate more topics in those pillars, and lean toward the winning format. Note in your summary that the queue was weighted by performance.
+
+## Gather grounding (four sources, blend them)
+Pull from every source available, then synthesize — don't rely on one:
+
+1. **Past winners** — the latest `output/perf-<slug>-*/perf.json` (feedback loop). If present, **weight toward what's working**: lift priority for the winning pillars/formats (`leaders.pillar`, `leaders.format`, and the `byPillar`/`byFormat` tables), generate more in those pillars, lean toward the winning format. Say in your summary that the queue was performance-weighted.
+2. **Client research docs (NotebookLM)** — if `client.json` has a `notebookLM` id, run `node tools/notebook-topics.mjs --client <slug> --json` to pull source-grounded topic candidates (each with title/angle/pillar/support) from the client's Gemini Notebook. This is an **optional feed**: it exits code 2 with a notice if auth is expired (`nlm login`) or the tool is down — if so, note it and continue with the other three sources. Prefer these candidates for their `support` (real, cited source detail); fold them into the queue rather than pasting verbatim.
+3. **Brand + offers** — `brand.md` and `topics.seed.json`: keep every topic on-voice and tied to what the client actually sells.
+4. **Live search/SEO** — when the Semrush or Firecrawl MCP tools are connected, pull current keyword/search-demand angles for the client's pillars and let real demand raise `priority`. Skip quietly if unavailable.
 
 ## Produce
 Generate **15–30 topics** by combining the client's pillars with the angle library — but write each as a **specific, concrete title**, not a filled-in template. Good: "Cloudflare's Bot Fight Mode can silently block your Google Ads". Weak: "A warning about Google Ads". Rules:

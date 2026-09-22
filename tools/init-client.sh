@@ -83,7 +83,8 @@ cat > "${DIR}/client.json" << JSON
   "timezone": "America/Los_Angeles",
   "platformTimes": { "linkedin": "08:30", "linkedin_personal": "09:00", "facebook": "10:00", "instagram": "11:30", "gbp": "12:30" },
   "defaultLink": "",
-  "platforms": ["instagram", "facebook", "linkedin", "gbp"]
+  "platforms": ["instagram", "facebook", "linkedin", "gbp"],
+  "notebookLM": ""
 }
 JSON
 
