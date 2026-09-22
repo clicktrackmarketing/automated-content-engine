@@ -14,7 +14,7 @@
 // engine's own scripts; no endpoint ever echoes environment values.
 
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, readdirSync, statSync, createReadStream } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, createReadStream } from 'node:fs';
 import { resolve, dirname, join, extname, relative, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 
@@ -81,6 +81,25 @@ function reviewState(dir) {
   return { hasReview: true, approved, unchecked, ready: unchecked === 0 && approved > 0, notes };
 }
 
+// A real (non-dry-run) publish appends "dry-run: `no`" to publish-log.md.
+function publishedState(dir) {
+  const p = join(dir, 'publish-log.md');
+  if (!existsSync(p)) return { published: false };
+  const md = readFileSync(p, 'utf8');
+  return { published: /dry-run:\s*`no`/.test(md), loggedAt: statSync(p).mtimeMs };
+}
+
+// Resolve a batch's GHL creds the same way ghl-publish-batch.sh does: the
+// manifest's client block names a locationId and a tokenEnv (an env var name).
+// Returns booleans only — never the token value.
+function clientCreds(m) {
+  const ghl = m.client?.ghl || {};
+  const tokenEnv = ghl.tokenEnv || 'GHL_API_KEY';
+  const locationSet = !!ghl.locationId;
+  const tokenSet = !!process.env[tokenEnv];
+  return { hasClient: !!m.client, tokenEnv, locationSet, tokenSet };
+}
+
 function batchSummary(id) {
   const dir = join(REPO, 'projects', id);
   const mp = join(dir, 'batch.manifest.json');
@@ -98,6 +117,7 @@ function batchSummary(id) {
     formats,
     hoursSaved: m.timeSaved?.hours ?? null,
     review: reviewState(dir),
+    published: publishedState(dir).published,
     mtime: statSync(mp).mtimeMs,
   };
 }
@@ -124,10 +144,21 @@ function batchDetail(id) {
     }),
     posts: (it.posts || []).map(p => ({ platform: p.platform, target: p.target, kind: p.kind, schedule: p.schedulePT || p.scheduleUTC })),
   }));
+  const creds = clientCreds(m);
+  const summary = batchSummary(id);
+  let publishBlocked = null;
+  if (!summary.review.ready) publishBlocked = summary.review.unchecked > 0
+    ? `${summary.review.unchecked} item(s) not approved yet` : 'no approved items';
+  else if (!creds.hasClient) publishBlocked = 'batch has no client — cannot resolve GHL account';
+  else if (!creds.locationSet) publishBlocked = 'client GHL location not set';
+  else if (!creds.tokenSet) publishBlocked = `token ${creds.tokenEnv} missing in .env`;
   return {
-    ...batchSummary(id),
+    ...summary,
     brand: m.brand ? relative(REPO, m.brand) : null,
     items,
+    creds: { tokenEnv: creds.tokenEnv, locationSet: creds.locationSet, tokenSet: creds.tokenSet, hasClient: creds.hasClient },
+    canPublish: publishBlocked === null,
+    publishBlocked,
     publishCommand: `set -a; source .env; set +a\nbash tools/publishers/ghl/ghl-publish-batch.sh projects/${id} --status in_review`,
   };
 }
@@ -193,6 +224,30 @@ const server = createServer((req, res) => {
       const id = decodeURIComponent(path.slice('/api/dry-run/'.length));
       if (!existsSync(join(REPO, 'projects', id, 'batch.manifest.json'))) return json(res, 404, { error: 'not found' });
       return run('bash', ['tools/publishers/ghl/ghl-publish-batch.sh', `projects/${id}`, '--status', 'in_review', '--dry-run'], res);
+    }
+    // Approve / unapprove: flip the checkboxes in review.md (local, reversible).
+    if (req.method === 'POST' && path.startsWith('/api/approve/')) {
+      const id = decodeURIComponent(path.slice('/api/approve/'.length));
+      const rp = join(REPO, 'projects', id, 'review.md');
+      if (!existsSync(rp)) return json(res, 404, { error: 'no review.md for this batch' });
+      let body = ''; req.on('data', d => body += d); req.on('end', () => {
+        let approved = true;
+        try { approved = JSON.parse(body || '{}').approved !== false; } catch {}
+        let md = readFileSync(rp, 'utf8');
+        md = approved ? md.replace(/- \[ \]/g, '- [x]') : md.replace(/- \[x\]/gi, '- [ ]');
+        writeFileSync(rp, md);
+        json(res, 200, { ok: true, review: reviewState(join(REPO, 'projects', id)) });
+      });
+      return;
+    }
+    // Publish for real: create posts in GHL as in_review (drafts, not live).
+    // No --force and no scheduled: the approval gate and in-review posture hold.
+    if (req.method === 'POST' && path.startsWith('/api/publish/')) {
+      const id = decodeURIComponent(path.slice('/api/publish/'.length));
+      const d = batchDetail(id);
+      if (!d) return json(res, 404, { error: 'not found' });
+      if (!d.canPublish) return json(res, 409, { error: d.publishBlocked || 'not publishable' });
+      return run('bash', ['tools/publishers/ghl/ghl-publish-batch.sh', `projects/${id}`, '--status', 'in_review'], res);
     }
     json(res, 404, { error: 'not found' });
   } catch (e) {
