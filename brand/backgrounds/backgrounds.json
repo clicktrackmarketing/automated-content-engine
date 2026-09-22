@@ -1,0 +1,5 @@
+{
+  "_comment": "SHARED, brand-neutral background library, merged under every client's own library by tools/bg-lib.mjs. NOT a dumping folder: every entry needs license + source. Client-specific images belong in brand/clients/<slug>/media/backgrounds/ instead. Image files are gitignored; this manifest is tracked.",
+  "_schema": { "file": "brand/backgrounds/<name>", "mood": "tech|local|abstract|human|texture", "pillars": ["optional; [] = any"], "orientation": "portrait|square|any", "scrim": "light|medium|strong", "focus": "optional 'x% y%'", "license": "REQUIRED", "source": "REQUIRED url/where", "credit": "optional" },
+  "backgrounds": []
+}
