@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Content Engine — Ops</title>
+<style>
+  :root{
+    --navy:#070f1d; --navy2:#0a172e; --card:#0e1f3a; --line:rgba(20,195,235,.22);
+    --cyan:#14c3eb; --cyan2:#1ad5ff; --text:#f8fafc; --muted:#c9d7e8;
+    --dim:#8ea0b8; --ok:#38d39f; --warn:#f5b458; --bad:#f2607a;
+    --radius:16px; --font:'Inter','Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 50% -10%,rgba(20,195,235,.10),transparent 55%),var(--navy);
+    color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.45}
+  a{color:var(--cyan2)}
+  header{position:sticky;top:env(safe-area-inset-top,0);z-index:20;padding:18px 24px;
+    background:rgba(7,15,29,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.3px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));box-shadow:0 0 14px var(--cyan)}
+  .brand small{display:block;font-weight:600;color:var(--dim);letter-spacing:2px;text-transform:uppercase;font-size:11px}
+  nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);font:inherit;font-weight:700;
+    padding:8px 16px;border-radius:999px;cursor:pointer}
+  nav button.on{background:rgba(20,195,235,.12);border-color:var(--line);color:var(--text)}
+  main{max-width:1180px;margin:0 auto;padding:26px 24px 80px}
+  h1{font-size:26px;margin:0 0 2px}
+  .sub{color:var(--dim);margin:0 0 22px;font-size:14px}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .card h3{margin:0 0 4px;font-size:18px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .between{justify-content:space-between}
+  .pill{font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.cyan{background:rgba(20,195,235,.12);color:var(--cyan2);border-color:transparent}
+  .badge{font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;letter-spacing:.3px}
+  .badge.ok{background:rgba(56,211,159,.15);color:var(--ok)}
+  .badge.warn{background:rgba(245,180,88,.15);color:var(--warn)}
+  .badge.draft{background:rgba(142,160,184,.14);color:var(--dim)}
+  .meta{color:var(--dim);font-size:13px;margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
+  .meta b{color:var(--muted);font-weight:700}
+  .cardbtn{cursor:pointer;transition:border-color .15s,transform .05s}
+  .cardbtn:hover{border-color:var(--cyan)}
+  .cardbtn:active{transform:translateY(1px)}
+  .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .s-ok{background:var(--ok)} .s-bad{background:var(--bad)}
+  button.act{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#052330;border:none;font:inherit;
+    font-weight:800;padding:10px 18px;border-radius:12px;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font:inherit;font-weight:700;
+    padding:9px 16px;border-radius:12px;cursor:pointer}
+  button.ghost:hover{border-color:var(--cyan);color:var(--text)}
+  .empty{color:var(--dim);text-align:center;padding:60px 20px;border:1px dashed var(--line);border-radius:var(--radius)}
+  /* drawer */
+  .scrim{position:fixed;inset:0;background:rgba(3,8,18,.6);backdrop-filter:blur(3px);z-index:40;display:none}
+  .scrim.on{display:block}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(760px,100%);background:var(--navy2);z-index:41;
+    border-left:1px solid var(--line);transform:translateX(100%);transition:transform .22s ease;overflow-y:auto}
+  .drawer.on{transform:none}
+  .drawer .dh{position:sticky;top:0;background:var(--navy2);border-bottom:1px solid var(--line);
+    padding:18px 24px;display:flex;align-items:center;gap:12px;z-index:2}
+  .drawer .db{padding:22px 24px 60px}
+  .x{margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1}
+  .item{border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;background:rgba(255,255,255,.015)}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .thumbs img{width:150px;height:200px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#0b1a30}
+  .cap{margin:8px 0;font-size:13px}
+  .cap .lbl{color:var(--cyan2);font-weight:800;text-transform:uppercase;letter-spacing:.6px;font-size:11px}
+  .cap .txt{color:var(--muted);white-space:pre-wrap;border-left:2px solid var(--line);padding-left:12px;margin-top:3px}
+  .sched{font-size:12.5px;color:var(--dim);margin-top:8px}
+  .sched span{color:var(--muted)}
+  pre.cmd{background:#050c18;border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;
+    font-size:12.5px;color:#bfe9f6;white-space:pre-wrap;word-break:break-word}
+  pre.log{background:#050c18;border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;
+    font-size:12px;color:var(--muted);max-height:340px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
+  th{color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:11px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  select{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--cyan);
+    color:var(--text);padding:12px 20px;border-radius:12px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;font-weight:700}
+  .toast.on{opacity:1}
+  .note{background:rgba(245,180,88,.08);border:1px solid rgba(245,180,88,.3);color:#f5d9a8;
+    border-radius:10px;padding:10px 14px;font-size:13px;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span><div>Content Engine<small>Ops Console</small></div></div>
+  <nav>
+    <button data-tab="queue" class="on">Review queue</button>
+    <button data-tab="clients">Clients</button>
+    <button data-tab="perf">Performance</button>
+  </nav>
+</header>
+<main id="view"></main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"><div id="drawerContent"></div></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s,r=document)=>r.querySelector(s);
+const view = $('#view');
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
+async function api(p,opts){const r=await fetch(p,opts);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);return r.json();}
+
+// ---- tabs -------------------------------------------------------------------
+const tabs = {queue:renderQueue, clients:renderClients, perf:renderPerf};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  tabs[b.dataset.tab]();
+});
+
+// ---- review queue -----------------------------------------------------------
+function statusBadge(r){
+  if(!r.hasReview) return '<span class="badge draft">No review</span>';
+  if(r.ready) return '<span class="badge ok">Ready to publish</span>';
+  if(r.unchecked>0) return `<span class="badge warn">${r.unchecked} unchecked</span>`;
+  return '<span class="badge draft">Draft</span>';
+}
+function fmtFormats(f){return Object.entries(f).map(([k,v])=>`${v} ${k}${v>1?'s':''}`).join(' · ')||'—';}
+async function renderQueue(){
+  view.innerHTML=`<h1>Review queue</h1><p class="sub">Batches waiting for review and publishing. Nothing publishes automatically.</p><div id="q" class="grid"></div>`;
+  const {batches}=await api('/api/batches');
+  const q=$('#q');
+  if(!batches.length){q.outerHTML='<div class="empty">No batches yet. Generate one with <b>/graphic-machine</b>.</div>';return;}
+  q.innerHTML=batches.map(b=>`
+    <div class="card cardbtn" data-id="${esc(b.id)}">
+      <div class="row between"><h3>${esc(b.id)}</h3>${statusBadge(b.review)}</div>
+      <div class="row" style="margin-top:8px">
+        ${b.clientName?`<span class="pill cyan">${esc(b.clientName)}</span>`:'<span class="pill">no client</span>'}
+        <span class="pill">${esc(fmtFormats(b.formats))}</span>
+      </div>
+      <div class="meta">
+        <span><b>${b.items}</b> items</span>
+        ${b.startDate?`<span>starts <b>${esc(b.startDate)}</b></span>`:''}
+        ${b.hoursSaved!=null?`<span>~<b>${b.hoursSaved}h</b> saved</span>`:''}
+      </div>
+    </div>`).join('');
+  q.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBatch(c.dataset.id));
+}
+
+// ---- batch drawer -----------------------------------------------------------
+function closeDrawer(){$('#drawer').classList.remove('on');$('#scrim').classList.remove('on');}
+$('#scrim').onclick=closeDrawer;
+async function openBatch(id){
+  const d=$('#drawer'),sc=$('#scrim');sc.classList.add('on');d.classList.add('on');
+  $('#drawerContent').innerHTML='<div class="dh"><b>Loading…</b><button class="x" onclick="closeDrawer()">×</button></div>';
+  const b=await api('/api/batches/'+encodeURIComponent(id));
+  const items=b.items.map(it=>`
+    <div class="item">
+      <div class="row between"><h3 style="margin:0">${esc(it.title||it.id)}</h3><span class="pill">${esc(it.kind)}</span></div>
+      ${it.media.length?`<div class="thumbs">${it.media.map(m=>`<img loading="lazy" src="${m.url}" alt="">`).join('')}</div>`:''}
+      ${Object.entries(it.captions).map(([k,v])=>v?`<div class="cap"><div class="lbl">${esc(k)}</div><div class="txt">${esc(v)}</div></div>`:'').join('')}
+      ${it.link?`<div class="sched">link: <a href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.link)}</a></div>`:''}
+      ${it.posts.length?`<div class="sched">schedule: ${it.posts.map(p=>`<span>${esc(p.platform)}</span> ${esc(p.schedule||'')}`).join(' · ')}</div>`:''}
+    </div>`).join('');
+  $('#drawerContent').innerHTML=`
+    <div class="dh"><div><b>${esc(b.id)}</b> &nbsp;${statusBadge(b.review)}</div><button class="x" onclick="closeDrawer()">×</button></div>
+    <div class="db">
+      <div class="meta" style="margin:0 0 16px">
+        ${b.clientName?`<span class="pill cyan">${esc(b.clientName)}</span>`:''}
+        <span><b>${b.items.length}</b> items</span>${b.startDate?`<span>starts <b>${esc(b.startDate)}</b></span>`:''}
+        ${b.hoursSaved!=null?`<span>~<b>${b.hoursSaved}h</b> saved</span>`:''}
+      </div>
+      ${b.review.notes.length?`<div class="note"><b>Change notes:</b> ${esc(b.review.notes.join(' · '))}</div>`:''}
+      ${items}
+      <h3 style="margin:26px 0 8px">Publish</h3>
+      <p class="sub" style="margin:0 0 10px">Publishing is deliberate. Copy this to run it yourself, or dry-run first to preview — the dashboard never publishes on its own.</p>
+      <pre class="cmd" id="cmd">${esc(b.publishCommand)}</pre>
+      <div class="row" style="margin-top:12px">
+        <button class="ghost" onclick="copyCmd()">Copy command</button>
+        <button class="act" id="dry" onclick="dryRun('${esc(b.id)}')">Dry-run preview</button>
+      </div>
+      <pre class="log" id="dryout" hidden></pre>
+    </div>`;
+}
+function copyCmd(){navigator.clipboard.writeText($('#cmd').textContent).then(()=>toast('Command copied'));}
+async function dryRun(id){
+  const btn=$('#dry'),out=$('#dryout');btn.disabled=true;btn.textContent='Running dry-run…';
+  try{const r=await api('/api/dry-run/'+encodeURIComponent(id),{method:'POST'});
+    out.hidden=false;out.textContent=(r.stdout||'')+(r.stderr?('\n'+r.stderr):'')||'(no output)';
+    toast(r.code===0?'Dry-run complete':'Dry-run exited '+r.code);
+  }catch(e){out.hidden=false;out.textContent='Error: '+e.message;}
+  btn.disabled=false;btn.textContent='Dry-run preview';
+}
+
+// ---- clients ----------------------------------------------------------------
+async function renderClients(){
+  view.innerHTML=`<h1>Clients</h1><p class="sub">Brand packs the engine can run. Green = ready to publish.</p><div id="c" class="grid"></div>`;
+  const {clients}=await api('/api/clients');
+  const c=$('#c');
+  if(!clients.length){c.outerHTML='<div class="empty">No client packs. Scaffold one with <b>tools/init-client.sh</b>.</div>';return;}
+  c.innerHTML=clients.map(cl=>`
+    <div class="card">
+      <div class="row between"><h3>${esc(cl.name)}</h3><span class="pill">${esc(cl.slug)}</span></div>
+      <div class="row" style="margin-top:10px">${(cl.platforms||[]).map(p=>`<span class="pill">${esc(p)}</span>`).join('')||'<span class="pill">no platforms</span>'}</div>
+      <div class="meta" style="margin-top:14px;flex-direction:column;gap:7px">
+        <span><span class="status-dot ${cl.ghlLocationSet?'s-ok':'s-bad'}"></span> GHL location ${cl.ghlLocationSet?'set':'missing'}</span>
+        <span><span class="status-dot ${cl.tokenSet?'s-ok':'s-bad'}"></span> Token <b>${esc(cl.tokenEnv)}</b> ${cl.tokenSet?'present':'missing in .env'}</span>
+        <span><span class="status-dot ${cl.hasBrandMd?'s-ok':'s-bad'}"></span> brand.md ${cl.hasBrandMd?'present':'missing'}</span>
+        ${cl.timezone?`<span style="color:var(--dim)">${esc(cl.timezone)}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ---- performance ------------------------------------------------------------
+function leaderTable(title,rows){
+  if(!rows||!rows.length)return'';
+  return `<h3 style="margin:22px 0 6px">${esc(title)}</h3><table><thead><tr>
+    <th>${esc(title)}</th><th class="num">Posts</th><th class="num">Avg eng</th><th class="num">Total</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${esc(r.key)}</td><td class="num">${esc(r.posts)}</td><td class="num">${esc(r.avgEng)}</td><td class="num">${esc(r.totalEng)}</td></tr>`).join('')}</tbody></table>`;
+}
+async function renderPerf(){
+  view.innerHTML=`<h1>Performance</h1><p class="sub">What's working, from published GHL engagement. Feeds the topic queue.</p>
+    <div class="row" style="margin-bottom:18px">
+      <select id="pc"></select>
+      <button class="ghost" id="refresh">Refresh from GHL</button>
+    </div><div id="pout"></div>`;
+  const {clients}=await api('/api/clients');
+  const sel=$('#pc');sel.innerHTML=clients.map(c=>`<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('');
+  sel.onchange=loadPerf;
+  $('#refresh').onclick=async()=>{
+    const c=sel.value;
+    if(!confirm(`Refresh performance for "${c}"? This makes a read-only call to GHL for published-post stats.`))return;
+    const btn=$('#refresh');btn.disabled=true;btn.textContent='Refreshing…';
+    try{const r=await api('/api/performance/refresh?client='+encodeURIComponent(c),{method:'POST'});
+      toast(r.code===0?'Performance refreshed':'Exited '+r.code);await loadPerf();
+    }catch(e){toast('Error: '+e.message);}
+    btn.disabled=false;btn.textContent='Refresh from GHL';
+  };
+  if(clients.length)loadPerf();else $('#pout').innerHTML='<div class="empty">No clients.</div>';
+}
+async function loadPerf(){
+  const c=$('#pc').value,out=$('#pout');out.innerHTML='<p class="sub">Loading…</p>';
+  const d=await api('/api/performance?client='+encodeURIComponent(c));
+  if(d.empty||!d.perf){out.innerHTML='<div class="empty">No performance report yet. Click <b>Refresh from GHL</b> to build one.</div>';return;}
+  const p=d.perf, matched=p.postsMatched??0;
+  const w=p.leaders||{};
+  const winners=(w.format||w.pillar||w.platform)?`<div class="row" style="margin:6px 0 4px">
+      ${w.format?`<span class="pill cyan">Top format: ${esc(w.format)}</span>`:''}
+      ${w.pillar?`<span class="pill cyan">Top pillar: ${esc(w.pillar)}</span>`:''}
+      ${w.platform?`<span class="pill cyan">Top platform: ${esc(w.platform)}</span>`:''}</div>`:'';
+  const topics=(p.topTopics&&p.topTopics.length)?`<h3 style="margin:22px 0 6px">Top topics</h3><table><thead><tr>
+      <th>Topic</th><th>Format</th><th>Pillar</th><th class="num">Posts</th><th class="num">Eng</th></tr></thead><tbody>
+      ${p.topTopics.map(t=>`<tr><td>${esc(t.title||t.topic)}</td><td>${esc(t.format||'')}</td><td>${esc(t.pillar||'')}</td><td class="num">${esc(t.posts)}</td><td class="num">${esc(t.eng)}</td></tr>`).join('')}</tbody></table>`:'';
+  out.innerHTML=`<p class="sub">Report <b>${esc(d.dir)}</b> · matched <b>${esc(matched)}</b> published posts · ${esc(p.windowDays||90)}-day window</p>
+    ${winners}
+    ${matched===0?'<div class="empty">No published posts matched yet. Once this batch\'s posts publish and gather engagement, the tables fill in.</div>':''}
+    ${leaderTable('By format',p.byFormat)}${leaderTable('By pillar',p.byPillar)}${leaderTable('By platform',p.byPlatform)}
+    ${topics}`;
+}
+window.closeDrawer=closeDrawer;window.copyCmd=copyCmd;window.dryRun=dryRun;
+renderQueue();
+</script>
+</body>
+</html>
