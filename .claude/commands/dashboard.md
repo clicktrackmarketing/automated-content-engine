@@ -15,7 +15,12 @@ readiness, and see performance without the terminal.
    readiness dots), and **Performance** (latest `output/perf-<client>-*` report,
    with a read-only "Refresh from GHL" button).
 
-Safety: the dashboard reads local files and can run a performance refresh
-(read-only) and a publish **dry-run** on request. It never auto-publishes — the
-real push is shown as a copy-to-run `ghl-publish-batch.sh … --status in_review`
-command so the human approval gate stays intact. See `dashboard/README.md`.
+Actions & safety: the drawer has **Approve/Unapprove** (flips the `review.md`
+checkboxes — a local, reversible write), **Dry-run** (posts nothing), and
+**Publish to GHL (in-review)**. Publish runs `ghl-publish-batch.sh … --status
+in_review` for real, but only behind an explicit confirmation naming the client
+and item count, only when the batch is approved and the client's GHL location +
+token are present, and never with `--force` or `--status scheduled` — so posts
+land as in-review drafts and nothing goes live until approved in GHL. Reads,
+thumbnail serving, and the performance refresh are read-only; `.env` is never
+exposed. See `dashboard/README.md`.

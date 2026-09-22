@@ -39,6 +39,15 @@
   .badge.ok{background:rgba(56,211,159,.15);color:var(--ok)}
   .badge.warn{background:rgba(245,180,88,.15);color:var(--warn)}
   .badge.draft{background:rgba(142,160,184,.14);color:var(--dim)}
+  .badge.pub{background:rgba(20,195,235,.16);color:var(--cyan2)}
+  button.act:disabled,button.ghost:disabled{opacity:.4;cursor:not-allowed}
+  /* confirm modal */
+  .modal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(3,8,18,.66);backdrop-filter:blur(4px);padding:20px}
+  .modal.on{display:flex}
+  .modal .box{background:var(--navy2);border:1px solid var(--cyan);border-radius:16px;max-width:460px;width:100%;padding:24px}
+  .modal h3{margin:0 0 10px;font-size:20px}
+  .modal p{color:var(--muted);font-size:14px;margin:0 0 8px}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
   .meta{color:var(--dim);font-size:13px;margin-top:10px;display:flex;gap:14px;flex-wrap:wrap}
   .meta b{color:var(--muted);font-weight:700}
   .cardbtn{cursor:pointer;transition:border-color .15s,transform .05s}
@@ -100,6 +109,10 @@
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer"><div id="drawerContent"></div></aside>
 <div class="toast" id="toast"></div>
+<div class="modal" id="modal"><div class="box">
+  <h3 id="mTitle"></h3><div id="mBody"></div>
+  <div class="actions"><button class="ghost" id="mCancel">Cancel</button><button class="act" id="mOk">Confirm</button></div>
+</div></div>
 
 <script>
 const $ = (s,r=document)=>r.querySelector(s);
@@ -108,6 +121,14 @@ const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 let toastT;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
 async function api(p,opts){const r=await fetch(p,opts);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);return r.json();}
+function confirmModal({title,html,okLabel='Confirm'}){
+  return new Promise(resolve=>{
+    const m=$('#modal');$('#mTitle').textContent=title;$('#mBody').innerHTML=html;$('#mOk').textContent=okLabel;
+    m.classList.add('on');
+    const done=v=>{m.classList.remove('on');$('#mOk').onclick=$('#mCancel').onclick=null;resolve(v);};
+    $('#mOk').onclick=()=>done(true);$('#mCancel').onclick=()=>done(false);
+  });
+}
 
 // ---- tabs -------------------------------------------------------------------
 const tabs = {queue:renderQueue, clients:renderClients, perf:renderPerf};
@@ -123,6 +144,7 @@ function statusBadge(r){
   if(r.unchecked>0) return `<span class="badge warn">${r.unchecked} unchecked</span>`;
   return '<span class="badge draft">Draft</span>';
 }
+function badgeFor(b){return b.published?'<span class="badge pub">Published</span>':statusBadge(b.review);}
 function fmtFormats(f){return Object.entries(f).map(([k,v])=>`${v} ${k}${v>1?'s':''}`).join(' · ')||'—';}
 async function renderQueue(){
   view.innerHTML=`<h1>Review queue</h1><p class="sub">Batches waiting for review and publishing. Nothing publishes automatically.</p><div id="q" class="grid"></div>`;
@@ -131,7 +153,7 @@ async function renderQueue(){
   if(!batches.length){q.outerHTML='<div class="empty">No batches yet. Generate one with <b>/graphic-machine</b>.</div>';return;}
   q.innerHTML=batches.map(b=>`
     <div class="card cardbtn" data-id="${esc(b.id)}">
-      <div class="row between"><h3>${esc(b.id)}</h3>${statusBadge(b.review)}</div>
+      <div class="row between"><h3>${esc(b.id)}</h3>${badgeFor(b)}</div>
       <div class="row" style="margin-top:8px">
         ${b.clientName?`<span class="pill cyan">${esc(b.clientName)}</span>`:'<span class="pill">no client</span>'}
         <span class="pill">${esc(fmtFormats(b.formats))}</span>
@@ -161,7 +183,7 @@ async function openBatch(id){
       ${it.posts.length?`<div class="sched">schedule: ${it.posts.map(p=>`<span>${esc(p.platform)}</span> ${esc(p.schedule||'')}`).join(' · ')}</div>`:''}
     </div>`).join('');
   $('#drawerContent').innerHTML=`
-    <div class="dh"><div><b>${esc(b.id)}</b> &nbsp;${statusBadge(b.review)}</div><button class="x" onclick="closeDrawer()">×</button></div>
+    <div class="dh"><div><b>${esc(b.id)}</b> &nbsp;${badgeFor(b)}</div><button class="x" onclick="closeDrawer()">×</button></div>
     <div class="db">
       <div class="meta" style="margin:0 0 16px">
         ${b.clientName?`<span class="pill cyan">${esc(b.clientName)}</span>`:''}
@@ -170,24 +192,56 @@ async function openBatch(id){
       </div>
       ${b.review.notes.length?`<div class="note"><b>Change notes:</b> ${esc(b.review.notes.join(' · '))}</div>`:''}
       ${items}
-      <h3 style="margin:26px 0 8px">Publish</h3>
-      <p class="sub" style="margin:0 0 10px">Publishing is deliberate. Copy this to run it yourself, or dry-run first to preview — the dashboard never publishes on its own.</p>
-      <pre class="cmd" id="cmd">${esc(b.publishCommand)}</pre>
-      <div class="row" style="margin-top:12px">
-        <button class="ghost" onclick="copyCmd()">Copy command</button>
-        <button class="act" id="dry" onclick="dryRun('${esc(b.id)}')">Dry-run preview</button>
+      <h3 style="margin:26px 0 8px">Approve & publish</h3>
+      ${b.published?`<div class="note" style="background:rgba(20,195,235,.08);border-color:var(--line);color:var(--muted)">Already published to GHL as in-review. Re-publishing would duplicate the posts — use the command below only if you truly need to.</div>`:''}
+      <div class="row" style="margin:4px 0 8px">
+        <button class="ghost" id="approve">${b.review.ready?'Unapprove all':'Approve all'}</button>
+        <button class="act" id="publish" ${(!b.canPublish||b.published)?'disabled':''}>Publish to GHL (in-review)</button>
+        <button class="ghost" id="dry">Dry-run</button>
       </div>
-      <pre class="log" id="dryout" hidden></pre>
+      <p class="sub" style="margin:0 0 12px">${b.published?'&nbsp;':(b.canPublish
+        ?`Creates the posts in <b>${esc(b.clientName||'the client')}</b>'s GHL as <b>in-review drafts</b> — nothing goes live until approved in GHL.`
+        :`<span style="color:var(--warn)">Publish blocked: ${esc(b.publishBlocked||'')}</span>`)}</p>
+      <details><summary class="sub" style="cursor:pointer">Or run it yourself</summary>
+        <pre class="cmd" id="cmd" style="margin-top:10px">${esc(b.publishCommand)}</pre>
+        <button class="ghost" onclick="copyCmd()">Copy command</button>
+      </details>
+      <pre class="log" id="pubout" hidden></pre>
     </div>`;
+  const ap=$('#approve'); if(ap) ap.onclick=()=>approve(b.id,!b.review.ready);
+  const pb=$('#publish'); if(pb&&!pb.disabled) pb.onclick=()=>publish(b);
+  const dr=$('#dry'); if(dr) dr.onclick=()=>dryRun(b.id);
+}
+async function approve(id,toApprove){
+  if(!toApprove){const ok=await confirmModal({title:'Clear approval?',html:'<p>This unchecks every approval box in this batch’s review.md, so it can’t be published until re-approved.</p>',okLabel:'Unapprove'});if(!ok)return;}
+  try{await api('/api/approve/'+encodeURIComponent(id),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({approved:toApprove})});
+    toast(toApprove?'Approved':'Approval cleared');await openBatch(id);renderQueue();
+  }catch(e){toast('Error: '+e.message);}
+}
+async function publish(b){
+  const ok=await confirmModal({
+    title:'Publish to GoHighLevel?',
+    html:`<p>This creates <b>${b.items.length} item(s)</b> for <b>${esc(b.clientName||b.client||'this client')}</b> as <b>in-review drafts</b> in GHL.</p>
+          <p>They will <b>not</b> go live until someone approves them in GHL’s Social Planner.</p>`,
+    okLabel:'Publish now'});
+  if(!ok)return;
+  const btn=$('#publish'),out=$('#pubout');btn.disabled=true;btn.textContent='Publishing…';out.hidden=false;out.textContent='Publishing to GHL…';
+  try{
+    const r=await api('/api/publish/'+encodeURIComponent(b.id),{method:'POST'});
+    const log=(r.stdout||'')+(r.stderr?('\n'+r.stderr):'');
+    if(r.code===0){toast('Published to GHL (in-review)');await openBatch(b.id);renderQueue();
+      const o=$('#pubout');if(o){o.hidden=false;o.textContent=log||'(done)';}
+    }else{out.textContent=log||'(no output)';toast('Publish exited '+r.code);btn.disabled=false;btn.textContent='Publish to GHL (in-review)';}
+  }catch(e){out.textContent='Error: '+e.message;toast('Publish failed');btn.disabled=false;btn.textContent='Publish to GHL (in-review)';}
 }
 function copyCmd(){navigator.clipboard.writeText($('#cmd').textContent).then(()=>toast('Command copied'));}
 async function dryRun(id){
-  const btn=$('#dry'),out=$('#dryout');btn.disabled=true;btn.textContent='Running dry-run…';
+  const btn=$('#dry'),out=$('#pubout');btn.disabled=true;btn.textContent='Running…';out.hidden=false;out.textContent='Running dry-run…';
   try{const r=await api('/api/dry-run/'+encodeURIComponent(id),{method:'POST'});
-    out.hidden=false;out.textContent=(r.stdout||'')+(r.stderr?('\n'+r.stderr):'')||'(no output)';
+    out.textContent=(r.stdout||'')+(r.stderr?('\n'+r.stderr):'')||'(no output)';
     toast(r.code===0?'Dry-run complete':'Dry-run exited '+r.code);
-  }catch(e){out.hidden=false;out.textContent='Error: '+e.message;}
-  btn.disabled=false;btn.textContent='Dry-run preview';
+  }catch(e){out.textContent='Error: '+e.message;}
+  btn.disabled=false;btn.textContent='Dry-run';
 }
 
 // ---- clients ----------------------------------------------------------------
